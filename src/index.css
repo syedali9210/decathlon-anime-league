@@ -1,0 +1,986 @@
+/* ── tokens ──────────────────────────────────────────────────────────────── */
+
+/* Registered so they resolve as numbers inside calc() in every engine. */
+@property --mx {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --my {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --sy {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+/* The three beats of the scroll-out, derived from --sy. Registered so the maths
+   resolves once per element instead of being re-substituted into every transform
+   that reads it. See .hero. */
+@property --exit {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --swell {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --ball {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+:root {
+  /* Sampled from the artwork. */
+  --c-ink: #000;
+  --c-gold: #f9c513;
+  --c-magenta: #cd2891;
+  --c-blue: #0a529b;
+  --c-navy: #0d1d5c;
+
+  /* Breathing room between the viewport edge and the frame. */
+  --frame-pad: clamp(12px, 2.4vmin, 32px);
+
+  /* Page-level side margin, matched to the artboard's 54/1596. */
+  --gutter: clamp(16px, 3.4vw, 54px);
+
+  /* The artwork cuts a twelve-cornered chamfered window for the card photo
+     rather than a plain rounded rect. Same shape in Products and Lineup. */
+  --photo-chamfer: polygon(
+    86.72% 0%,
+    13.8% 0%,
+    8.4% 4.45%,
+    0% 8.45%,
+    0% 92.34%,
+    6.58% 95.84%,
+    12.7% 100%,
+    86.98% 100%,
+    94.14% 95.88%,
+    100% 93.13%,
+    100% 7.57%,
+    92.45% 3.99%
+  );
+
+  /* Total rail thickness, at the artboard's own proportions — 24 units on the
+     1572.6-wide frame board, so ~1.53vw. Everything else in the frame derives
+     from it: the rail is a symmetric 5 / 14 / 5 gold / checker / gold. */
+  --band: clamp(14px, 1.6vw, 28px);
+  --band-outer: calc(var(--band) * 5 / 24);
+  --band-check: calc(var(--band) * 14 / 24);
+  /* The board's checker is not square, and not the same on both axes: 10.46
+     wide on the horizontal runs, 4.31 on the vertical ones. The designer fitted
+     the same 137 tiles to both edges, so the side runs read as fine stripes
+     against the top and bottom's squares. Kept — it is what the board shows. */
+  --band-dash: calc(var(--band) * 10.4598 / 24);
+  --band-dash-y: calc(var(--band) * 4.31386 / 24);
+  /* The corner medallion and the hooked elbow below it, as one tile. */
+  --corner-w: calc(var(--band) * 116 / 24);
+  --corner-h: calc(var(--band) * 180 / 24);
+
+  /* One magenta + one blue tile: the checker's repeat period, and so the
+     distance the band travels per loop. */
+  --frame-pitch: calc(var(--band-dash) * 2);
+  --frame-speed: 1.6s;
+
+  /* How far a layer at depth 1 travels across the full pointer sweep. */
+  --sweep-x: 2.6%;
+  --sweep-y: 2%;
+  --sweep-scroll: 16%;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--c-ink);
+  color: #fff;
+  font: 16px/1.4 system-ui, sans-serif;
+  overscroll-behavior-y: none;
+  /* Lenis drives the scroll; the native bar would cut across the frame. */
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── hero shell ──────────────────────────────────────────────────────────── */
+
+/* The runway is the only reason the page scrolls, and its height is the whole
+   pacing control: --sy runs 0 -> 1 over the part of it the hero stays pinned
+   for, which is `height - 100svh`. At 340svh that is 240svh of pinned scroll:
+   140svh for the scroll-out, then 100svh with the hero held dimmed underneath
+   while the next section slides up over it. Anything scheduled past --sy 1 would
+   play off-screen. */
+.hero-runway {
+  position: relative;
+  height: 340svh;
+}
+
+.hero {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: clip;
+  background: var(--c-ink);
+  /* The scene clears out of the way of the next section, in three overlapping
+     beats rather than one curve — the relay yesnowww.com runs, measured off it:
+     the parting starts on the first pixel of scroll and is linear, and the
+     things that swell and arrive are later ranges that overlap its tail.
+     Linear because the reference is linear for the first ~60% of its travel and
+     only decelerates once the element is past the edge — which the frame here
+     crops anyway, so the tail would never be seen. Which layers move, and how
+     far, is `exit` and `grow` in layers.ts. Declared here, with --sy, because
+     the ball outside .hero__stage reads them too. */
+  --exit: clamp(0, calc(var(--sy) / 0.35), 1);
+  --swell: clamp(0, calc((var(--sy) - 0.16) / 0.25), 1);
+  --ball: clamp(0, calc((var(--sy) - 0.2) / 0.38), 1);
+}
+
+/* Everything — illustration and frame alike — lives inside this inset box.
+   `container-type: size` makes it the reference for the cover sizing and the
+   condense breakpoints below, so both measure the framed area rather than the
+   viewport and stay correct whatever the padding is. */
+.hero__stage {
+  position: absolute;
+  inset: var(--frame-pad);
+  overflow: clip;
+  container-type: size;
+  /* Border and illustration alike fall back as the ball crosses, so the handover
+     reads as the ball taking the screen and then the next section arriving over
+     a scene that has already stepped back. The ball is outside this box, so it
+     stays at full strength while everything behind it goes. */
+  opacity: calc(1 - 0.7 * var(--ball));
+}
+
+/* ── stage ───────────────────────────────────────────────────────────────── */
+
+.stage {
+  position: absolute;
+  inset: 0;
+  --condense: 0;
+  /* Just enough headroom that the few percent the layers slide by never
+     exposes an edge. */
+  --overscan: 1.05;
+}
+
+/* Pure-CSS `cover` for the 1495:903 content box — whichever axis is the binding
+   one wins the max(), and the other follows from the ratio. No JS, no resize
+   observer, correct at every aspect ratio. Measured in container units so it
+   covers the framed box, not the viewport. */
+.stage__art {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: max(100cqw, calc(100cqh * 1495 / 903));
+  height: max(100cqh, calc(100cqw * 903 / 1495));
+  /* Anchored to the baseline, not the centre: the ribbon and foliage along the
+     bottom edge are composition, the sky above is not, so every crop — the
+     cover overflow and the overscan alike — is taken off the top. The 0.6%
+     bleed is headroom for the pointer sweep nudging the court upward. */
+  transform: translate(-50%, 0.6%) scale(var(--overscan));
+  transform-origin: 50% 100%;
+  animation: art-in 1200ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(
+    calc(
+      var(--mx) * var(--depth) * var(--sweep-x) * -1 + var(--inward) *
+        var(--condense) * 1% + var(--exit-x, 0) * var(--exit) * 1%
+    ),
+    calc(
+      var(--my) * var(--depth) * var(--sweep-y) * -1 + var(--sy) * var(--depth) *
+        var(--sweep-scroll) + var(--down) * var(--condense) * 1%
+    ),
+    0
+  )
+  scale(
+    calc(
+      (1 - var(--condense) * var(--shrink, 0)) *
+        (1 + var(--grow, 0) * var(--swell))
+    )
+  );
+  will-change: transform;
+  animation: layer-in 800ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--depth) * 420ms);
+}
+
+/* The flaming cricket ball that flies in as the scene parts — Figma
+   199-156312. It crosses the whole screen on its own beat, `--ball`, which
+   starts once the parting is well under way and ends exactly as the hero
+   unpins — so the ball is in, across and gone before the next section arrives,
+   rather than parking on a scene that has already left. The travel is written
+   in viewport units plus its own width, which is what puts it just off the edge
+   at each end whatever the aspect ratio. It turns slowly on its own axis the
+   whole way and nothing else about it moves (see propMotion.ts).
+
+   A child of .hero, not .hero__stage, and after it in the DOM: that box is the
+   frame's clip and its own stacking context, so anything inside is cut at the
+   rail and painted under the border. Out here the ball is cut at the viewport
+   and crosses over the border instead. Sized against the shorter viewport axis
+   so it stays a ball rather than filling a phone. */
+.hero__ball {
+  --bw: min(52vw, 76svh);
+  position: absolute;
+  left: 0;
+  top: 8%;
+  width: var(--bw);
+  pointer-events: none;
+  /* Above .frame's 2. Being a later sibling of .hero__stage is not enough:
+     size containment on that box does not scope its children's z-index, so the
+     border's 2 competes here and would paint over the ball. */
+  z-index: 3;
+  /* -85% of its own width parks it just clear of the left edge at --exit 0, at
+     every aspect ratio — far enough to be gone, near enough that the flight
+     spreads over the whole range rather than arriving in the last fifth. */
+  transform: translate3d(
+    calc(var(--ball) * (100vw + var(--bw)) - var(--bw)),
+    calc(var(--ball) * 30vh),
+    0
+  );
+  will-change: transform;
+}
+
+.hero__ball svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible; /* flames scale past the viewBox as they flicker */
+}
+
+.layer > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation-name: float;
+  animation-duration: var(--idle, 0s);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes art-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0.6%) scale(calc(var(--overscan) * 1.05));
+  }
+}
+
+@keyframes layer-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  to {
+    transform: translate3d(0, -0.9%, 0) rotate(0.25deg);
+  }
+}
+
+/* ── episodes ────────────────────────────────────────────────────────────── */
+
+/* Vertical rhythm mirrors the artboard: 98 / 256 / 109 / 379 / 182 of 1024,
+   expressed against width so it scales with the cards rather than the window. */
+/* Slides up over the hero rather than pushing it off. The hero is sticky for
+   the whole runway, so pulling this up by one viewport puts its arrival inside
+   the pinned stretch: the last 100svh of the runway is this section climbing
+   over a hero that is still there, dimmed, underneath. z-index because .hero is
+   positioned too and would otherwise win on document order. */
+.episodes {
+  position: relative;
+  z-index: 1;
+  margin-top: -100svh;
+  display: grid;
+  justify-items: center;
+  gap: clamp(32px, 6.8vw, 109px);
+  padding: clamp(56px, 6.1vw, 98px) 0 clamp(64px, 11.4vw, 182px);
+  /* First leg of one ramp that runs the length of the page: every section
+     starts on the colour the section above it ends on, so the boundaries are
+     invisible and no stop depends on how tall anything is. Black at the top to
+     meet the hero, lifting to the violet the artboard fades into — the 50%
+     violet composites over #282828, which is what makes the foot #503b6b. */
+  background:
+    linear-gradient(180deg, #000 0%, rgb(120 81 174 / 0.5) 100%),
+    #282828;
+}
+
+/* Split per character so the title can land one letter at a time. The word
+   wrapper is what keeps line breaking sane — characters are inline-block, so
+   without it every letter becomes its own break opportunity. */
+.episodes__word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.episodes__char {
+  display: inline-block;
+  will-change: transform;
+}
+
+.episodes__title {
+  margin: 0;
+  max-width: 62%;
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(2rem, 8vw, 8rem);
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: #fff;
+}
+
+/* Five cards fit above ~1100px; below that the row becomes a snap carousel
+   rather than shrinking the posters past legibility. `safe` keeps the first
+   card reachable once it overflows. */
+.episodes__row {
+  --ep-gap: clamp(14px, 3.9vw, 62px);
+  display: flex;
+  justify-content: safe center;
+  gap: var(--ep-gap);
+  margin: 0;
+  padding: 0 var(--gutter);
+  list-style: none;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);
+  scrollbar-width: none;
+}
+
+.episodes__row::-webkit-scrollbar {
+  display: none;
+}
+
+/* Five cards and four gaps divide the row exactly — the artboard's 248/62/54
+   sum to precisely 100%, so deriving the width from the row instead of from vw
+   avoids the rounding that would tip it into a scrollbar. Below 190px the
+   posters stop being legible, so that is where the carousel takes over. */
+.episodes__card {
+  flex: 0 0 max(190px, calc((100% - 4 * var(--ep-gap)) / 5));
+  max-width: 248px;
+  scroll-snap-align: center;
+}
+
+/* Reserve the poster's 248:379 before the SVG lands so the row never reflows. */
+.episodes__art {
+  aspect-ratio: 248 / 379;
+  border-radius: 18px;
+  background: #000;
+}
+
+.episodes__art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── products ────────────────────────────────────────────────────────────── */
+
+/* Second leg: picks up the violet the episodes section ends on and runs to the
+   crimson its own artboard ends on. Sampled linear, no compositing. */
+.products {
+  background: linear-gradient(180deg, #503c6b 0%, #c52354 100%);
+  padding: clamp(48px, 12.4vw, 198px) var(--gutter) clamp(48px, 8.6vw, 138px);
+}
+
+/* Positioning context for the floating props, and the grid's own max width:
+   3 x 425 + 2 x 55 on the 1596 artboard. */
+.products__stage {
+  position: relative;
+  max-width: 1385px;
+  margin-inline: auto;
+}
+
+.products__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12.4% 3.97%; /* 90 and 55 of the 1385 grid */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── product card ────────────────────────────────────────────────────────── */
+
+/* One 425x723 card. Everything inside is a percentage of it, so the whole thing
+   scales from the column width alone. */
+.pcard {
+  position: relative;
+  aspect-ratio: 425 / 723;
+  border-radius: 5.53%/3.25%; /* 23.5 of 425 and of 723 */
+  background: #000;
+}
+
+.pcard__photo {
+  position: absolute;
+  left: 6.12%;
+  top: 7.61%;
+  width: 87.76%;
+  height: 80.91%;
+  object-fit: cover;
+  clip-path: var(--photo-chamfer);
+}
+
+/* One shared file for all six cards: plate rule, corner brackets, checker
+   blocks, sparkles and both logos. */
+.pcard__chrome {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.pcard__meta {
+  position: absolute;
+  left: 3.29%;
+  right: 3.29%;
+  top: 93.36%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  color: #e4e4e4;
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-size: clamp(9px, 0.75vw, 12px);
+  line-height: normal;
+}
+
+.pcard__id {
+  display: flex;
+  flex-direction: column;
+  gap: 0.67em;
+  min-width: 0;
+}
+
+.pcard__name {
+  font-weight: 600;
+  white-space: pre-wrap;
+}
+
+.pcard__price {
+  font-weight: 400;
+}
+
+.pcard__swatches {
+  display: flex;
+  gap: 0.5em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-shrink: 0;
+}
+
+.pcard__swatches li {
+  width: 0.83em;
+  height: 0.83em;
+  border-radius: 50%;
+}
+
+/* ── floating props ──────────────────────────────────────────────────────── */
+
+/* Sized and placed against the grid, not the viewport, so they keep station
+   over the cards at every width. */
+.products__prop {
+  position: absolute;
+  translate: -50% -50%;
+  pointer-events: none;
+  z-index: 2; /* the props overflow above the cards */
+  will-change: transform;
+}
+
+.products__prop svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible; /* flames scale past the viewBox as they flicker */
+}
+
+.products__prop[data-prop='football'] {
+  left: 8%;
+  top: 1%;
+  width: 15%;
+}
+.products__prop[data-prop='cricketball'] {
+  left: 33%;
+  top: 52.5%;
+  width: 15.7%;
+}
+.products__prop[data-prop='shuttle'] {
+  left: 98%;
+  top: 45%;
+  width: 15.5%;
+}
+.products__prop[data-prop='tennisball'] {
+  left: 94%;
+  top: 96%;
+  width: 20.4%;
+}
+
+/* Two columns, then one, before the cards get too small to read. */
+@media (max-width: 900px) {
+  .products__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8% 4%;
+  }
+}
+
+@media (max-width: 560px) {
+  .products__grid {
+    grid-template-columns: 1fr;
+    gap: 7%;
+  }
+  .pcard__meta {
+    font-size: 12px;
+  }
+  /* The props are placed against a 3-up grid; they land on top of the cards
+     once it reflows. */
+  .products__prop {
+    display: none;
+  }
+}
+
+/* ── line-up ─────────────────────────────────────────────────────────────── */
+
+.lineup {
+  position: relative;
+  overflow: clip;
+  /* Third leg: on from the crimson above, settling into violet for the foot of
+     the page. */
+  background: linear-gradient(180deg, #c52354 0%, #443a72 66%);
+  /* The trailing space is what gives the stepping room to finish while this is
+     the last section on the page; trim it once something follows. */
+  padding: clamp(64px, 11vw, 176px) var(--gutter) clamp(200px, 55vh, 620px);
+}
+
+.lineup__list {
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+  max-width: 1100px;
+}
+
+.lineup__title {
+  margin: 0;
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(34px, 6vw, 96px);
+  line-height: 1.18;
+  text-align: center;
+  text-transform: uppercase;
+  color: #eee;
+  /* The pink offset is a hard shadow, not a stroke. */
+  text-shadow: 0 4px 0 #ff5ec2;
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* 0fr -> 1fr animates to the panel's natural height with nothing measured. */
+.lineup__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lineup__item[data-open] .lineup__panel {
+  grid-template-rows: 1fr;
+}
+
+.lineup__panel-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.lineup__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(12px, 3vw, 48px);
+  max-width: 900px;
+  margin: clamp(16px, 2.4vw, 38px) auto;
+  opacity: 0;
+  transition: opacity 320ms ease 120ms;
+}
+
+.lineup__item[data-open] .lineup__row {
+  opacity: 1;
+}
+
+.lineup__index {
+  flex-shrink: 0;
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(10px, 1vw, 16px);
+  letter-spacing: 0.04em;
+  color: #b1aebd;
+}
+
+/* Same chrome file as the product grid; this plate is 47px shorter, so the
+   chrome keeps its own 425:723 ratio and the surplus is clipped. */
+.lineup__card {
+  position: relative;
+  flex: 0 1 clamp(180px, 26.6vw, 425px);
+  aspect-ratio: 425 / 676;
+  overflow: hidden;
+  border-radius: 5.53%/3.48%;
+  background: #000;
+}
+
+.lineup__photo {
+  position: absolute;
+  left: 6.12%;
+  top: 8.14%;
+  width: 87.76%;
+  height: 86.54%;
+  object-fit: cover;
+  clip-path: var(--photo-chamfer);
+}
+
+.lineup__chrome {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.lineup__price {
+  flex-shrink: 0;
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(10px, 0.88vw, 14px);
+  color: #000;
+  background: #ff5ec2;
+  border: 2px solid #000;
+  border-radius: 25px;
+  padding: 0.64em 1.28em;
+  filter: drop-shadow(-2px 2px 0 #000);
+  white-space: nowrap;
+}
+
+/* ── scattered props ─────────────────────────────────────────────────────── */
+
+.lineup__scatter {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lineup__scatter[data-scatter='helmet'] {
+  left: 7.1%;
+  top: 14%;
+  width: 16%;
+}
+.lineup__scatter[data-scatter='ball'] {
+  left: 10.5%;
+  top: 44%;
+  width: 12.6%;
+}
+.lineup__scatter[data-scatter='racket'] {
+  left: 73.2%;
+  top: 42%;
+  width: 19.6%;
+}
+.lineup__scatter[data-scatter='shuttle'] {
+  left: 87.8%;
+  top: 62%;
+  width: 9.5%;
+}
+
+/* The list runs edge to edge on a phone; the props would sit on the titles. */
+@media (max-width: 720px) {
+  .lineup__scatter {
+    display: none;
+  }
+  .lineup__row {
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lineup__panel,
+  .lineup__row {
+    transition: none;
+  }
+}
+
+/* ── frame ───────────────────────────────────────────────────────────────── */
+
+.frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Layer one: the gold rails, which stay put. Layer two, showing through the gap
+   between them: the magenta/blue checker at its 20px artboard pitch, with a
+   hairline between squares.
+   The checker is the only layer that moves — animating its background-position
+   by exactly one pitch loops seamlessly, so the band reads as a belt running
+   around the frame. A marquee of repeated tiles (the reference builds it from
+   ~140 stacked <div>s per edge) renders identically and costs 500+ nodes. */
+.frame__edge {
+  position: absolute;
+  background:
+    linear-gradient(
+      var(--edge-dir),
+      var(--c-gold) 0 var(--band-outer),
+      transparent var(--band-outer)
+        calc(var(--band-outer) + var(--band-check)),
+      var(--c-gold) calc(var(--band-outer) + var(--band-check)) 100%
+    ),
+    repeating-linear-gradient(
+      var(--check-dir),
+      var(--c-magenta) 0 var(--band-dash),
+      var(--c-blue) var(--band-dash) calc(var(--band-dash) * 2)
+    );
+  animation: var(--frame-run) var(--frame-speed) linear infinite;
+}
+
+/* Opposite edges run opposite ways, so the belt circulates clockwise rather
+   than the top and bottom sliding the same way. */
+@keyframes frame-run-x {
+  to {
+    background-position:
+      0 0,
+      var(--frame-pitch) 0;
+  }
+}
+
+@keyframes frame-run-y {
+  to {
+    background-position:
+      0 0,
+      0 var(--frame-pitch);
+  }
+}
+
+.frame__edge--top {
+  --edge-dir: to bottom;
+  --check-dir: 90deg;
+  --frame-run: frame-run-x;
+  inset: 0 var(--corner-w) auto var(--corner-w);
+  height: var(--band);
+}
+.frame__edge--bottom {
+  --edge-dir: to top;
+  --check-dir: 90deg;
+  --frame-run: frame-run-x;
+  animation-direction: reverse;
+  inset: auto var(--corner-w) 0 var(--corner-w);
+  height: var(--band);
+}
+.frame__edge--left {
+  --edge-dir: to right;
+  --check-dir: 0deg;
+  --band-dash: var(--band-dash-y);
+  --frame-speed: calc(1.6s * 4.31386 / 10.4598);
+  --frame-run: frame-run-y;
+  animation-direction: reverse;
+  inset: var(--corner-h) auto var(--corner-h) 0;
+  width: var(--band);
+}
+.frame__edge--right {
+  --edge-dir: to left;
+  --check-dir: 0deg;
+  --band-dash: var(--band-dash-y);
+  --frame-speed: calc(1.6s * 4.31386 / 10.4598);
+  --frame-run: frame-run-y;
+  inset: var(--corner-h) 0 var(--corner-h) auto;
+  width: var(--band);
+}
+
+:is(.frame__corner, .frame__curve) {
+  position: absolute;
+  width: var(--corner-w);
+  height: var(--corner-h);
+}
+
+/* The belt round the elbow. A gradient cannot follow a curve, so this is a
+   dashed magenta stroke laid over a solid blue one, both on the same
+   centreline: the gaps in the dash are the blue tiles. One animated property
+   for the whole thing, and stroke units are viewBox units, so the tile scales
+   with --band exactly as the artwork does.
+   The side runs' tile, not the top's — the elbow is the end of a side rail, and
+   the coarser run along the top is separated from it by the medallion. */
+.frame__curve {
+  overflow: visible;
+  fill: none;
+  stroke-width: 14;
+  stroke-linecap: butt;
+  pointer-events: none;
+}
+.frame__curve-bed {
+  stroke: var(--c-blue);
+}
+.frame__curve-dash {
+  stroke: var(--c-magenta);
+  stroke-dasharray: 4.31386 4.31386;
+  animation: frame-curve calc(var(--frame-speed) * 4.31386 / 10.4598) linear
+    infinite;
+}
+
+/* The medallion rim is the same belt closed into a circle — 24 static wedges
+   until it had to move, now a stroked circle for the same reason the elbow is a
+   stroked path. Its tile is the circumference over 70 rather than the rails'
+   4.31386, because a dash only meets itself cleanly if it divides the circle a
+   whole number of times; 4.29052 is 0.54% off the rails and invisible, where a
+   seam would not be. */
+.frame__ring-bed,
+.frame__ring-dash {
+  fill: none;
+  stroke-width: 15;
+}
+.frame__ring-bed {
+  stroke: var(--c-blue);
+}
+.frame__ring-dash {
+  stroke: var(--c-magenta);
+  stroke-dasharray: 4.29052 4.29052;
+  animation: frame-ring calc(var(--frame-speed) * 4.29052 / 10.4598) linear
+    infinite;
+}
+
+/* One tile of travel each, so both loop seamlessly like the straight runs do. */
+@keyframes frame-curve {
+  to {
+    stroke-dashoffset: 8.62772;
+  }
+}
+@keyframes frame-ring {
+  to {
+    stroke-dashoffset: 8.58104;
+  }
+}
+
+/* The belt circulates clockwise, so the elbow has to run with the side rail it
+   belongs to: toward the medallion at top-left and bottom-right, away from it
+   at the other two. Mirroring keeps the path's own direction, so those two flip
+   here instead. */
+.frame__curve[data-corner='tr'] :is(.frame__curve-dash, .frame__ring-dash),
+.frame__curve[data-corner='bl'] :is(.frame__curve-dash, .frame__ring-dash) {
+  animation-direction: reverse;
+}
+
+/* One corner tile — medallion, gold disc and the hooked elbow that runs down
+   into the side rail — mirrored into the other three. */
+:is(.frame__corner, .frame__curve)[data-corner='tl'] {
+  top: 0;
+  left: 0;
+}
+:is(.frame__corner, .frame__curve)[data-corner='tr'] {
+  top: 0;
+  right: 0;
+  transform: scaleX(-1);
+}
+:is(.frame__corner, .frame__curve)[data-corner='bl'] {
+  bottom: 0;
+  left: 0;
+  transform: scaleY(-1);
+}
+:is(.frame__corner, .frame__curve)[data-corner='br'] {
+  bottom: 0;
+  right: 0;
+  transform: scale(-1);
+}
+
+/* ── vector line mode ────────────────────────────────────────────────────── */
+
+/* Every layer is inline SVG, so one rule reaches all ~1700 traced paths.
+   Set `data-lines` on .stage to switch the artwork to an outlined look. */
+.stage[data-lines] :is(path, circle, ellipse, rect) {
+  stroke: var(--c-ink);
+  stroke-width: 0.75;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ── reduced motion ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .stage__art,
+  .layer,
+  .layer > svg,
+  .frame__edge,
+  .frame__curve-dash,
+  .frame__ring-dash {
+    animation: none;
+  }
+  .hero-runway {
+    height: 100svh;
+  }
+}
+
+/* ── breakpoints ─────────────────────────────────────────────────────────── */
+
+/* Keyed on the framed box's aspect ratio, not width: how hard the 1.66:1
+   artboard gets cropped is what decides how far the outer layers have to come
+   in, and a 812x375 phone in landscape needs none of it. Container queries, so
+   --frame-pad is accounted for. See layers.ts for the per-layer moves. */
+@container (max-aspect-ratio: 4 / 3) {
+  .stage {
+    --condense: 0.45;
+  }
+}
+
+@container (max-aspect-ratio: 1 / 1) {
+  .stage {
+    --condense: 0.7;
+  }
+}
+
+@container (max-aspect-ratio: 3 / 4) {
+  .stage {
+    --condense: 0.85;
+  }
+}
+
+@container (max-aspect-ratio: 2 / 3) {
+  .stage {
+    --condense: 1;
+    --overscan: 1.04;
+    --sweep-x: 1.8%;
+  }
+  /* Phone portrait shows roughly the middle third of the artboard. The badge
+     needs that room, and the banners flanking it no longer fit beside it. */
+  .layer[data-layer^='banner'] {
+    display: none;
+  }
+}
+
+/* Coarse pointers get no hover parallax, so the scroll drift carries the depth. */
+@media (pointer: coarse) {
+  :root {
+    --sweep-scroll: 22%;
+  }
+}
