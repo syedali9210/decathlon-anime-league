@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 import { LAYERS } from './layers'
 import { animateScene } from './animate'
+import { namespaceIds } from '../lib/inlineSvg'
 
 /**
  * The illustration. `.stage__art` is sized to cover the viewport in pure CSS
@@ -18,7 +19,10 @@ export function Stage() {
     <div
       className="stage"
       ref={stage}
-      aria-hidden="true"
+      // Not aria-hidden as a whole any more: the banners carry real links, and a
+      // focusable element inside an aria-hidden subtree is reachable by keyboard
+      // but invisible to a screen reader. The artwork is hidden per layer below
+      // instead, which leaves the links exposed.
       // ?lines outlines every traced path — see the "vector line mode" rule in
       // index.css. The hook is one CSS selector because the layers are inline.
       data-lines={
@@ -26,28 +30,65 @@ export function Stage() {
       }
     >
       <div className="stage__art">
-        {LAYERS.map((l) => (
-          <div
-            key={l.id}
-            className="layer"
-            data-layer={l.id}
-            style={
-              {
-                '--depth': l.depth,
-                '--exit-x': l.exit ?? 0,
-                '--grow': l.grow ?? 0,
-                '--inward': l.inward ?? 0,
-                '--down': l.down ?? 0,
-                '--shrink': l.shrink ?? 0,
-                '--idle': l.idle ? `${l.idle}s` : undefined,
-                transformOrigin: l.origin?.join(' '),
-              } as React.CSSProperties
-            }
-            // Inline rather than <img> so every traced path stays a live DOM
-            // node — that is what makes recolouring and line work possible.
-            dangerouslySetInnerHTML={{ __html: l.svg }}
-          />
-        ))}
+        {LAYERS.map((l) => {
+          const vars = {
+            '--depth': l.depth,
+            '--exit-x': l.exit ?? 0,
+            '--grow': l.grow ?? 0,
+            '--inward': l.inward ?? 0,
+            '--down': l.down ?? 0,
+            '--shrink': l.shrink ?? 0,
+            '--idle': l.idle ? `${l.idle}s` : undefined,
+            transformOrigin: l.origin?.join(' '),
+          } as React.CSSProperties
+
+          return (
+            <Fragment key={l.id}>
+              <div
+                className="layer"
+                data-layer={l.id}
+                aria-hidden="true"
+                style={vars}
+                // Inline rather than <img> so every traced path stays a live DOM
+                // node — that is what makes recolouring and line work possible.
+                // Namespaced per layer, like every other inlined export on the
+                // site. These fifteen all came out of one export session and so
+                // had unique ids by luck, until a layer was replaced from a
+                // different one: the new banner carried `clip0_104_99489`, the
+                // same generated id the badge uses, and the whole middle of the
+                // scene stopped painting. Prefixing stops the next swap doing it.
+                dangerouslySetInnerHTML={{
+                  __html: namespaceIds(l.svg, `${l.id}-`),
+                }}
+              />
+              {l.link && (
+                // Its own layer, carrying the same transform variables as the
+                // art it sits on, so the hotspot tracks the banner through the
+                // pointer parallax and the condense instead of drifting off it.
+                <div
+                  className="layer"
+                  data-layer={`${l.id}-link`}
+                  style={vars}
+                >
+                  <a
+                    className="layer__link"
+                    href={l.link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      left: l.link.box[0],
+                      top: l.link.box[1],
+                      width: l.link.box[2],
+                      height: l.link.box[3],
+                    }}
+                  >
+                    <span className="sr-only">{l.link.label}</span>
+                  </a>
+                </div>
+              )}
+            </Fragment>
+          )
+        })}
       </div>
     </div>
   )

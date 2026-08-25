@@ -9,10 +9,19 @@ gsap.registerPlugin(CSSPlugin, ScrollTrigger)
  * ball that flies into the hero as it scrolls away (Figma 198-156311, which is
  * the same artwork — see `heroball`).
  *
- * Each prop is a ball and a trail of flame vectors. The ball spins on its own
- * centre; the flames stay put and flicker, scaled about that same centre so they
- * lick outward rather than swelling in place — except on the hero's ball, where
- * `flicker: false` leaves the trail still and the ball is the only thing moving.
+ * Each prop is a ball and a trail of flame vectors, and **only the ball turns**.
+ * The flames are part of the drawing, not a separate effect.
+ *
+ * They used to flicker — every flame vector on its own clock, scaled and rotated
+ * about the ball's centre. On traced artwork that pulled the trail apart: the
+ * flame is dozens of separate shapes that read as one mass only while they hold
+ * their relative positions, so animating them individually scattered them. Hence
+ * `flicker: false` on all of them; the option remains for artwork whose flame is
+ * a single shape.
+ *
+ * The bob and its ground shadow are CSS on the <svg> and a pseudo-element (see
+ * index.css) — GSAP owns the host's transform for the scroll drift, so the two
+ * never write the same property.
  *
  * `ball` lists the path indices that make up the ball — the rest of the file is
  * flame. Football and cricket ball fall on a group boundary; shuttlecock and
@@ -34,10 +43,10 @@ const r = (a: number, b: number) =>
   Array.from({ length: b - a + 1 }, (_, i) => a + i)
 
 export const PROPS: Record<string, PropSpec> = {
-  football: { ball: r(0, 8), spin: 13, drift: -70 },
-  cricketball: { ball: r(0, 8), spin: -9.5, drift: 52 },
-  shuttle: { ball: r(11, 22), spin: 17, drift: -44 },
-  tennisball: { ball: [2, 3, 4, 13, 14], spin: -11, drift: 64 },
+  football: { ball: r(0, 8), spin: 13, drift: -70, flicker: false },
+  cricketball: { ball: r(0, 8), spin: -9.5, drift: 52, flicker: false },
+  shuttle: { ball: r(11, 22), spin: 17, drift: -44, flicker: false },
+  tennisball: { ball: [2, 3, 4, 13, 14], spin: -11, drift: 64, flicker: false },
   /**
    * The hero's crossing ball — its own artwork (Figma 199-156312), not the
    * traced prop above. One slow turn every 12s and nothing else moving: the

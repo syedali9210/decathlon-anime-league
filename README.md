@@ -16,6 +16,8 @@ Two more boards are not sections but parts of the hero:
 | the border | [195-156186](https://www.figma.com/design/suWhIOu9YsTu3h65tJePfD/Decathlon?node-id=195-156186) |
 | the scroll-out | [198-156311](https://www.figma.com/design/suWhIOu9YsTu3h65tJePfD/Decathlon?node-id=198-156311) |
 | the ball that crosses it | [199-156312](https://www.figma.com/design/suWhIOu9YsTu3h65tJePfD/Decathlon?node-id=199-156312) |
+| the episode card backs | [242-167460](https://www.figma.com/design/suWhIOu9YsTu3h65tJePfD/Decathlon?node-id=242-167460) |
+| the episodes section, deck stacked | [242-172240](https://www.figma.com/design/suWhIOu9YsTu3h65tJePfD/Decathlon?node-id=242-172240) |
 
 `src/App.tsx` stacks them; each lives in `src/sections/`.
 
@@ -55,6 +57,7 @@ src/scene/Stage.tsx        inlines the layers, wires the parallax
 src/scene/animate.ts       flags, banners, ball + hand, bat + arm
 src/scene/Frame.tsx        the border
 src/scene/Ball.tsx         the ball that crosses over it
+src/Cursor.tsx             the pointer
 src/lib/useParallax        --mx / --my / --sy, and Lenis
 ```
 
@@ -65,6 +68,96 @@ black plate, gold rule and drop shadow included — so they need no chrome aroun
 them. Unlike the hero layers these are `<img>`, not inlined: nothing manipulates
 their paths, and 1.3 MB of traced comic art has no business in the JS bundle.
 They lazy-load and cache on their own.
+
+### The deck
+
+The section leads with live copy — "Welcome to the anime world", the two sub
+lines, and the "Choose your league" rule with the chrome's eight-pointer either
+side — and then deals its five cards out of a pile.
+
+**Each card has two faces.** The back is new art, split out of
+[242-167460](https://www.figma.com/design/suWhIOu9YsTu3h65tJePfD/Decathlon?node-id=242-167460)
+into `assets/episodes/back-*.svg`; the front is the poster that was already
+there. The backs came out at exactly **248x379**, the same as the posters, which
+is how you can tell they were drawn as two sides of one card rather than as a
+separate screen. Nothing animates inside a back, so they ship as `<img>` — the
+same rule the scene layers follow.
+
+**It is keyed to the hero unpinning, not to the row.** Keyed to the row's own
+position, the deal started at scroll 1559 while the section was still sliding
+over the hero until 1779 — the cards dealt themselves across a section that had
+not arrived. `.hero-runway`'s bottom reaching the viewport bottom *is* the
+handover, so the deck triggers off that and runs 0.8 of a viewport from there.
+
+The deal is a scrubbed `fromTo` back to *identity*: the cards sit in their normal
+row positions in the DOM and the stack is an offset applied at progress 0. That
+keeps the row responsive for free, makes the landed state simply "no transform",
+and means `rotateY` to 180 is the whole flip — the faces are back-to-front inside
+the card, so one rotation both turns it over and reveals the poster. The pile
+offsets are function-based with `invalidateOnRefresh`, so it re-forms on the
+row's real centre at any width instead of a baked pixel value.
+
+The pile's shape comes from
+[245-2](https://www.figma.com/design/suWhIOu9YsTu3h65tJePfD/Decathlon?node-id=245-2):
+`PILE` in `Episodes.tsx` holds an offset per card as a fraction of a card, so it
+scales, plus a lean. The board reports its five cards as axis-aligned bounds of a
+rotated 248x379, which gives the angle back — 8 to 18 degrees, spread about
+±0.6 of a card wide. The stacking order is not recoverable from bounds alone, so
+the fan is matched in character rather than card for card.
+
+**The clip and the gradient live on the runway, not the screen.** On the sticky
+100svh section, `overflow: clip` cut the deck: the pile sits ~0.95 of a card
+below the row, which is past the bottom of that box, so cards were sliced as they
+rose. Out on the runway the clip is 130svh further down and the deck has room —
+1040px of it at a 1280x800 viewport. The gradient had to move with it, or cards
+leaving the screen would cross onto bare page black instead of the section's own
+ramp.
+
+**The breakpoint is `gsap.matchMedia`, not a check at mount.** Checked once, a
+page loaded narrow and then widened kept the deck sat down for good, because the
+effect never re-ran.
+
+**And the triggers get refreshed.** This section grows after it first lays out —
+posters are fetched and injected per card, the headline's font lands late — so
+anything measured before that is stale, and the deck read as already dealt at the
+top of the page. One coalesced `ScrollTrigger.refresh()` per frame on
+fonts-ready, window load, and each poster injection.
+
+Every offset is measured off the `<li>` seat, never the card: the card already
+carries the offset the function returns, so measuring the card feeds back on
+itself and the pile collapses to nothing on the next refresh.
+
+**Float outside, deal inside.** The bob is a CSS animation on a wrapper and the
+deal is GSAP on the card within it, so the two never write the same transform —
+the same split the cursor and the floating props use, for the same reason. It is
+`animation-play-state: paused` until the deck lands, because a card still on its
+way in should not also be bobbing, and the five run on unequal periods with
+offset starts so they never bob as one mass.
+
+Reduced motion gets the landed state outright: dealt, face up, still.
+
+### The floating props
+
+Each prop is a ball and a trail of flame vectors, and **only the ball turns.**
+
+They used to flicker — every flame vector on its own clock, scaled and rotated
+about the ball's centre. On traced artwork that pulls the trail apart: the flame
+is dozens of separate shapes that read as one mass only while they hold their
+relative positions, so animating them individually scattered them across the
+card. `flicker: false` on all four; the option stays for artwork whose flame is
+a single shape.
+
+The bob and its ground shadow are CSS, on the `<svg>` and a `::after` — GSAP owns
+the host's transform for the scroll drift, so the two never write the same
+property. The shadow is a real element rather than a `drop-shadow` filter,
+because a filter shadow travels with the artwork and reads as glued to it; this
+one stays on the ground and shrinks and fades as the prop rises, which is what
+sells the lift.
+
+Periods are unequal and the phases offset, so four props never bob as one mass.
+Both are passed as custom properties: `animation-delay` set on the host would
+never reach the `<svg>` or the pseudo-element, because animation longhands do not
+inherit.
 
 ### Card props
 
@@ -178,18 +271,18 @@ arriving *after* you have scrolled to the next section, and a parting that never
 looks finished because it is only 60% done at the handover.
 
 So the runway's height is the pacing control, and only `height - 100svh` of it
-counts. At 340svh that is 240svh to spend:
+counts. At 240svh that is 140svh to spend:
 
 | | `--sy` | of the pinned window |
 |---|---|---|
-| parting done | 0.35 | 84svh |
-| flags at full swell | 0.41 | 98svh |
-| ball across and gone | 0.58 | 140svh |
-| next section slides over | 0.58..1 | 140..240svh |
-| hero unpins | 1 | 240svh |
+| parting done | 0.35 | 49svh |
+| flags at full swell | 0.41 | 57svh |
+| ball across and gone | 0.58 | 81svh |
+| hold | 0.58..1 | 81..140svh |
+| hero unpins | 1 | 140svh |
 
-The choreography still takes the same 140svh it always did; the extra 100svh is
-the next section climbing over a hero that is still pinned underneath, dimmed.
+The last 100svh of the runway is the hero sliding away, and what is behind it is
+simply the next section.
 
 Each `exit` is sized from that layer's own distance to the frame edge in the
 worst case — a wide viewport, where the frame shows ~95% of the art and there is
@@ -266,17 +359,54 @@ Chaining the legs rather than running one gradient down `main` keeps every stop
 independent of how tall anything is — no section can be resized into a wrong
 colour, and a new section only has to know the one above it.
 
-### The next section slides over
+### How the second section arrives
 
-Episodes does not push the hero off the top — it climbs over it. `margin-top:
--100svh` puts its top exactly at the point the hero unpins, so it enters the
-viewport one screen earlier and spends that screen sliding up a hero that is
-still pinned and dimmed behind it. `z-index: 1` because `.hero` is positioned
-too and would otherwise win on document order.
+It does **not** slide over the hero. It did, briefly — `margin-top: -100svh`
+against the sticky hero, so it climbed over a dimmed hero still pinned behind
+it — and the effect was wrong: it read as a foreign frame dropped on top of the
+homepage rather than as the page moving on.
 
-That is the whole of it: no scroll handler, no pinning library, one negative
-margin against a sticky hero. What it costs is runway — the extra 100svh in the
-table above — because the hero has to stay pinned for the whole slide.
+So it arrives in ordinary flow, and the staging does the work instead. The hero
+scrolls away, this section's gradient takes the screen, and only then do its
+contents come in, each on its own trigger:
+
+**And it pins while the deck deals**, on its own runway — the same shape the
+hero uses, a tall `.episodes-runway` with a sticky 100svh screen inside it.
+Without the pin the deal ran against a section that was still travelling: the
+cards reached their positions and were carried straight off the top, which left
+the deck jammed at the top of the screen with the rest of the section empty
+below it. Pinned, they land in the middle and stay there.
+
+`230svh`, so `height - 100svh` = 130svh of pinned scroll:
+
+| | of the pinned window |
+|---|---|
+| gradient | before it — the hero slides off and this section is what is behind |
+| title | as the section arrives, `top 85%` |
+| deck deals | 0 .. 0.72 |
+| hold, deck landed | 0.72 .. 1 |
+
+That hold *is* the gap between this section and the next: the deck sits dealt for
+a beat before the section scrolls on.
+
+The deck lands about 120px below the centre of the screen rather than dead on it.
+The column is centred as a block and the copy sits above the row, so the row
+falls below the middle; the section's bottom padding biases the whole block up to
+close most of that. It cannot close all of it on a short viewport, where two
+lines of headline, three lines of copy and five cards already fill the height —
+that padding is the knob if a taller screen wants it centred harder.
+
+**The divider label cycles.** Three phrases on a loop, each landing a character
+at a time and leaving the same way, on the beat the headline uses — `back.out`
+overshoot with a vertical stretch, so it reads as the same piece of design rather
+than a generic crossfade.
+
+All three sit in **one grid cell**, which is what stops the rules either side
+shifting as the text changes width: the container is always as wide as the
+longest phrase (160px here against phrases of 160/132/159). They are
+`aria-hidden` behind one stable `aria-label` — a live region announcing three
+slogans on a loop would be hostile — and under reduced motion the first phrase
+simply stands alone.
 
 **The title lands a letter at a time.** Each character drops in stretched and
 tilted and overshoots into place, which is the beat an anime title card hits —
@@ -311,10 +441,22 @@ grip made the bat look loose in the gloves.
 
 The banners are the flags' trick turned on its side: they hang rather than fly,
 so the pivot is the top edge and `skewX` — not `skewY` — is what swings the free
-end. Their pivot is measured off the cloth at runtime rather than hardcoded,
-because the rest of each banner layer is a stack of 900-unit strips clipped down
-to the banner's shape, and those strips' bounding boxes say nothing about where
-the banner actually hangs.
+end.
+
+Their pivot is **declared rather than measured**, which is a step back from how
+the rest of that file works and worth explaining. The art
+([252-1709](https://www.figma.com/design/suWhIOu9YsTu3h65tJePfD/Decathlon?node-id=252-1709))
+is a Lottie export: its real geometry spans 1596x1101 and the 110x374 banner you
+see is a clip out of it, so every bounding box in the layer — paths, groups, all
+of them — reports that larger shape, and none can say where the cloth hangs.
+
+What *is* knowable is the placement, because we do it. Each layer wraps the art
+in `translate(x y)` and the banner is 110 wide, so the fixing is `x + 55, y` —
+489,159 and 1112,156. If the translate in `assets/scene/banner-*.svg` moves,
+`BANNERS` in `animate.ts` has to move with it; nothing will warn.
+
+The positioning translate sits on a `<g>` *inside* the one the wave animates,
+because GSAP writes `transform` on its target and would otherwise overwrite it.
 
 The flags were the interesting one. The obvious way to wave a flag is to displace
 each of its ~74 checker quads on a phase that lags with distance from the pole —
@@ -557,22 +699,81 @@ which silently added ~330 kB to the JS bundle, twice, before it was noticed.
 per file makes mask and clipPath references collide once the layers share a
 document.
 
+## The cursor
+
+The Decathlon mark follows the pointer, swells over anything clickable, and
+scatters balls when pressed.
+
+The mark is the ninth path of the Decathlon lockup in
+`assets/products/card-chrome.svg`, lifted from the artwork rather than redrawn.
+Its viewBox is that path's own bounding box, which is why the coordinates look
+arbitrary: nothing is translated, the window is just moved onto it.
+
+**Gold, because black cannot work.** The page runs black at the hero, then
+violet, crimson, violet — a black pointer would vanish for the whole first
+screen. Gold is the frame's own colour, holds against all four grounds, and stays
+distinct from the two light patches it crosses: the badge's cream plate and the
+white checkered flags. Two shadows carry it there, a soft one for weight on the
+dark sections and a tight one that reads as an outline on the light ones. Neither
+is a glow — hovering swells the mark and turns it pink, and that is the whole
+affordance.
+
+**The burst is the four product-grid balls**, in `assets/ui/ball-*.svg`. The
+index lists that separate ball from flame already existed in
+`sections/propMotion.ts`, verified once by isolating each set and looking at it,
+so these are those sets cut to their own bounding boxes with nothing re-traced.
+Every press redraws both which ball lands in each slot and the arc it takes, so
+no two clicks are alike; they go up and out first and then fall, which reads as
+thrown rather than exploded.
+
+`.cursor` is a 0x0 point that `gsap.quickTo` damps onto the pointer, the same
+damping the parallax uses; everything inside centres on it with `translate` so
+`transform` stays free.
+
+**CSS owns the mark outright and no tween touches it.** That is not tidiness, it
+is the fix for a real bug: on an `<svg>` element the individual transform
+properties are ignored here — setting `scale` computes straight back to `1` and
+nothing moves, while `transform: scale()` works — so the hover swell has to be a
+`transform`, and once it is, a GSAP tween on the same element would fight it. The
+press squash is therefore a `data-press` class on a timer rather than a tween.
+The balls keep `translate` for centring, because that one does take and nothing
+but GSAP writes their transform.
+
+The seven slots are fixed `<img>` nodes reused on every press rather than
+elements spawned per click: a press is a `src` swap and a timeline restart
+instead of DOM churn on a path a visitor hits constantly. They start out holding
+one of each ball, so all four are decoded before the first click rather than
+flashing in on it.
+
+Fine pointers only, and never under reduced motion. The native cursor is hidden
+by an attribute the component sets *after* it has decided it will run, so there
+is no state where a visitor has neither pointer. Anything can opt in with
+`data-cursor`; the three card types already do.
+
 ## Known gaps
 
+- `.products` clips on x. The floating props are placed past the grid on purpose
+  (`left: 98%` and `94%`) and nothing above them clipped, so at narrow widths they
+  pushed the document ~18px wider than the viewport and the page could be panned
+  sideways. `clip` rather than `hidden` so it does not become a scroll container,
+  and only on x so they can still overhang the cards vertically.
+- The episodes carousel rule has to sit *after* the base `.episodes__card` rule
+  in the file. Same specificity, so the cascade goes on order alone — with the
+  media block above it the 190px floor lost and phone cards rendered at 59px.
 - The JS bundle is ~281 kB gzipped, nearly all hero path data — the episode cards
   are not in it. If more screens inline artwork, split the hero layers into a
   lazy chunk.
 - All five episode cards inlined is ~4,500 extra path nodes on top of the hero's
   ~1,700. They inject lazily, but this is the thing to watch on a mid-range phone.
-- The four props run ~80 concurrent GSAP tweens between them (one per flame
-  path). Cheap individually, but it is the second thing to profile. The hero's
-  ball is one tween rather than twenty — `flicker: false` is why.
+- The props are one tween each now that the flames hold still, so the ~80
+  concurrent flame tweens are gone — `flicker: false` on all of them. Worth
+  remembering if a future prop turns the flicker back on.
 - The headline pulls Roboto Flex from Google Fonts. For a European retailer that
   is worth self-hosting before launch; it is a `<link>` swap for an `@font-face`.
-- `.hero-runway` is 340svh of empty scroll: 100svh of it is the hero's own height
-  and the other 240svh is what --sy is measured over. Replace its height with the
-  next real section, but keep the pinned stretch long enough for the scroll-out
-  and the slide-over — see "The pinned window" above.
+- `.hero-runway` is 240svh of empty scroll: 100svh of it is the hero's own height
+  and the other 140svh is what --sy is measured over. Replace its height with the
+  next real section, but keep the pinned stretch long enough for the scroll-out —
+  see "The pinned window" above.
 - **Headless screenshots lie about this page.** `layer-in` is `backwards`-filled
   with `animation-delay: depth * 420ms`, and under Chrome's
   `--virtual-time-budget` any layer with a delay past ~200ms is captured still

@@ -52,28 +52,27 @@ const PARTS = {
     ],
     expect: [1098, 446, 174, 142],
   },
-  /**
-   * The banner cloth itself. The rest of each banner layer is a stack of
-   * 900-unit strips clipped down to this shape, so their bounding boxes say
-   * nothing useful about where the banner actually hangs — this one path is
-   * what the pivot is measured from.
-   */
-  bannerLeft: {
-    layer: 'banner-left',
-    ranges: [[0, 0]],
-    expect: [434, 159, 110, 374],
-  },
-  bannerRight: {
-    layer: 'banner-right',
-    ranges: [[0, 0]],
-    expect: [1057, 156, 110, 374],
-  },
 } satisfies Record<string, Part>
 
-/** Left banner leads, right banner mirrors it, so the pair sway in opposition. */
+/**
+ * Where each banner hangs from, in artboard units, and which way it leads —
+ * left and right mirror so the pair sway in opposition.
+ *
+ * These are **declared, not measured**, which is a step back from how the rest
+ * of this file works and worth explaining. The banner art (Figma 252-1709) is a
+ * Lottie export: its real geometry spans 1596x1101 and the 110x374 banner you
+ * see is a clip out of it, so every bounding box in the layer — the paths', the
+ * groups', all of them — reports that larger shape and none of them can tell you
+ * where the cloth hangs.
+ *
+ * What is knowable is the placement, because we do it: each layer wraps the art
+ * in `translate(x y)` at these coordinates and the banner is 110 wide, so the
+ * fixing is `x + 55, y`. **If the translate in `assets/scene/banner-*.svg`
+ * changes, change these with it** — nothing will warn.
+ */
 const BANNERS = [
-  { layer: 'banner-left', part: PARTS.bannerLeft, name: 'bannerLeft', dir: 1 },
-  { layer: 'banner-right', part: PARTS.bannerRight, name: 'bannerRight', dir: -1 },
+  { layer: 'banner-left', pivot: '489 159', dir: 1 },
+  { layer: 'banner-right', pivot: '1112 156', dir: -1 },
 ] as const
 
 /** Ball spins about its own centre; the hand pivots at the wrist end of the wedge. */
@@ -140,7 +139,9 @@ function wireFlagWave(root: HTMLElement) {
   const svg = root.querySelector('[data-layer="flags"] svg')
   if (!svg) return
   const cloths = [...svg.querySelectorAll('g')].filter(
-    (g) => g.id === 'Group 68' || g.id === 'Group 69',
+    // Suffix, not equality: layer ids are namespaced on the way in, so these
+    // arrive as `flags-Group 68`.
+    (g) => g.id.endsWith('Group 68') || g.id.endsWith('Group 69'),
   )
 
   cloths.forEach((cloth, i) => {
@@ -166,19 +167,17 @@ function wireFlagWave(root: HTMLElement) {
  *   rotate   the whole banner leaning on its fixing
  *   scaleX   the cloth furling as that wave runs down it
  *
- * The pivot is measured off the cloth rather than hardcoded, so a re-export that
- * moves the banner takes the wave with it; `expect` is what catches a re-export
- * that reorders the paths under it.
+ * The pivot is declared rather than measured — see BANNERS for why this one
+ * export defeats measurement.
  */
 function wireBannerWave(root: HTMLElement) {
-  for (const { layer, part, name, dir } of BANNERS) {
-    const cloth = resolve(root, part, name)[0]
+  for (const { layer, pivot, dir } of BANNERS) {
+    // The outer <g>; the positioning translate is on the <g> inside it, because
+    // GSAP writes `transform` on its target and would overwrite it.
     const group = root.querySelector(`[data-layer="${layer}"] svg > g`)
-    if (!cloth || !group) continue
+    if (!group) continue
 
-    const b = cloth.getBBox()
-    const svgOrigin = `${b.x + b.width / 2} ${b.y}`
-    const loop = { repeat: -1, yoyo: true, ease: 'sine.inOut', svgOrigin }
+    const loop = { repeat: -1, yoyo: true, ease: 'sine.inOut', svgOrigin: pivot }
 
     gsap.to(group, { ...loop, skewX: 3.2 * dir, duration: 2.1 })
     gsap.to(group, { ...loop, rotation: 1.4 * dir, duration: 3.3 })
