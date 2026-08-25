@@ -387,7 +387,10 @@ body::-webkit-scrollbar {
 
 .episodes__char {
   display: inline-block;
-  will-change: transform;
+  /* Deliberately no `will-change`: there are 74 of these between the headline
+     and the cycling label, and promoting each to its own compositor layer for
+     the length of the page costs far more than the brief tween it would help.
+     GSAP promotes what it is animating while it animates it. */
 }
 
 .episodes__title {
@@ -466,6 +469,15 @@ body::-webkit-scrollbar {
      size and the row scrolls to reach them. */
   .episodes__card {
     flex-basis: max(190px, calc((100% - 4 * var(--ep-gap)) / 5));
+  }
+
+  /* Room for what the cards paint beyond their layout box. They carry a resting
+     tilt — about 10px of extra height on a 190x290 card — and a float that lifts
+     them 11px more. This row is a scroll container here, and a scroll container
+     clips on BOTH axes however the overflow is written, so without this the top
+     of every card was sliced off. */
+  .episodes__row {
+    padding-block: 24px 12px;
   }
 }
 
@@ -887,8 +899,10 @@ body::-webkit-scrollbar {
 
 @media (max-width: 560px) {
   .products__grid {
-    grid-template-columns: 1fr;
-    gap: 7%;
+    /* Two up, not one: a single column made the cards enormous and the section
+       endless to scroll. */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 9% 4%;
   }
   .pcard__meta {
     font-size: 12px;
@@ -1393,6 +1407,15 @@ html[data-custom-cursor] * {
   stroke: var(--c-ink);
   stroke-width: 0.75;
   vector-effect: non-scaling-stroke;
+}
+
+/* Anything scrolled out of view stops animating. The frame's checker belt, the
+   layer floats, the deck's bob and the props' all run on infinite CSS
+   animations, and left alone they keep the compositor busy for sections nobody
+   is looking at. An observer marks what is off-screen; this stops it. */
+[data-idle],
+[data-idle] * {
+  animation-play-state: paused !important;
 }
 
 /* ── reduced motion ──────────────────────────────────────────────────────── */
