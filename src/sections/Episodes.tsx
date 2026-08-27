@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import spinIgnite from "../assets/episodes/spin-ignite.svg";
@@ -31,6 +31,24 @@ function refreshTriggers() {
 }
 
 const TITLE = "Welcome to the anime world";
+
+/**
+ * The section announces itself one line at a time before it shows anything.
+ * Each of these takes the middle of the screen alone and clears out before the
+ * next arrives — a title card sequence, not a list assembling itself.
+ *
+ * The claims are repeated from `.episodes__sub` on purpose: this is a
+ * presentation of the copy, and the paragraph below is the copy. The relay is
+ * `aria-hidden`, so assistive tech reads the sentence once, from the paragraph
+ * that stays on the page.
+ */
+const RELAY = [
+  { id: "title", text: TITLE },
+  { id: "sports", text: "5 sports" },
+  { id: "leagues", text: "5 leagues" },
+  { id: "character", text: "One main character" },
+  { id: "you", text: "YOU", hot: true },
+];
 
 /** The eight-pointer from `card-chrome.svg`, flanking the divider as on the board. */
 /** The divider label cycles through these, forever. */
@@ -135,38 +153,158 @@ function Card({ ep }: { ep: (typeof EPISODES)[number] }) {
 }
 
 /**
- * The title lands a letter at a time as the section arrives: each character
- * drops in stretched and tilted and overshoots into place, which is the beat an
- * anime title card hits — squash and stretch, not a fade. `back.out` is what
- * does the overshoot; the vertical stretch is what stops it reading as a plain
- * slide.
- *
- * Split per character in the markup rather than by a plugin, with the whole
- * string on the heading's aria-label so assistive tech gets the sentence and not
- * 22 letters.
+ * How the pinned window is divided. The intro takes the front of it, the deal
+ * picks up after a short gap, and what is left at the end is the hold that
+ * gives the landed deck a beat before the section scrolls on.
  */
-function useTitleSlam(el: React.RefObject<HTMLElement | null>) {
+const INTRO_SPAN = 0.66;
+// The same mark the intro ends on, not a hair after it: the row is revealed by
+// the last frame of the intro, and any gap between the two would show the deck
+// sitting undealt.
+const DEAL_AT = INTRO_SPAN;
+const DEAL_SPAN = 0.26;
+
+/**
+ * The section announces itself before it shows anything, and it does it one line
+ * at a time: the headline rides up from the foot of the screen, lands a letter
+ * at a time in the middle of it, and leaves; then each claim takes that same
+ * middle alone and clears out for the next; and only when the last of them has
+ * gone does the real header rise into its layout place and hand over to the
+ * deal.
+ *
+ * Scrubbed, not played. The beats are the reason the runway is as long as it is,
+ * and a visitor scrolling back up should see the sequence run backwards rather
+ * than find the section already assembled.
+ *
+ * The relay is its own stack of slides rather than the header's own elements
+ * moved around. Centring the paragraph's spans one at a time would have meant
+ * computing a per-span origin, translate and scale to put each in the middle and
+ * then unwinding all of it to land back in a two-line paragraph. Five absolutely
+ * placed slides that fade in and out cost a few lines of markup and no maths,
+ * and the header is left alone to simply arrive at the end.
+ */
+function useIntroSequence(
+  section: React.RefObject<HTMLElement | null>,
+  relay: React.RefObject<HTMLElement | null>,
+  title: React.RefObject<HTMLElement | null>,
+  sub: React.RefObject<HTMLElement | null>,
+  choose: React.RefObject<HTMLElement | null>,
+) {
   useEffect(() => {
-    const host = el.current;
-    if (!host) return;
+    const el = section.current;
+    const stage = relay.current;
+    const head = title.current;
+    if (!el || !stage || !head) return;
+    // The slides are `opacity: 0` in the stylesheet and only this hook lifts
+    // them, so bailing out here leaves the page as its layout describes it:
+    // relay never seen, header and copy plainly visible.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    const runway = el.closest<HTMLElement>(".episodes-runway");
+    if (!runway) return;
+    const pinned = () => runway.offsetHeight - window.innerHeight;
+
+    const group = [head, sub.current, choose.current].filter(
+      Boolean,
+    ) as HTMLElement[];
+    const row = el.querySelector<HTMLElement>(".episodes__row");
+
+    /**
+     * How far below its layout place the header waits. `offsetTop` and not a
+     * rect: the section is the offset parent and is pinned to the top of the
+     * window, so this is already the headline's position on screen — and unlike
+     * a rect it is not affected by the transform this very tween is writing.
+     */
+    const drop = () =>
+      window.innerHeight / 2 - (head.offsetTop + head.offsetHeight / 2);
+
     const ctx = gsap.context(() => {
-      gsap.from(".episodes__char", {
-        yPercent: 130,
-        rotate: -9,
-        scaleY: 1.7,
-        opacity: 0,
-        transformOrigin: "50% 100%",
-        duration: 0.55,
-        ease: "back.out(2.4)",
-        stagger: 0.035,
-        scrollTrigger: { trigger: host, start: "top 85%", once: true },
+      const slides = [
+        ...stage.querySelectorAll<HTMLElement>(".episodes__slide"),
+      ];
+      const [lead, ...claims] = slides;
+      if (!lead) return;
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: runway,
+          start: "top top",
+          end: () => "+=" + pinned() * INTRO_SPAN,
+          scrub: 0.6,
+          invalidateOnRefresh: true,
+        },
       });
-    }, host);
+
+      // The header waits out the whole relay, low and invisible. `opacity`
+      // rather than `autoAlpha`: the paragraph is the copy of record, and
+      // `visibility: hidden` would take it out of the accessibility tree for
+      // the length of the sequence.
+      //
+      // The deck waits with it. Hiding the ROW and not the cards is the whole
+      // point: the deal staggers its five targets, so at its own progress 0
+      // four of them have not been rendered yet and are sitting exactly where
+      // the layout puts them — in a row, in plain sight, behind the titles.
+      // Nothing done to the cards can fix that; the container has to go.
+      tl.set(row, { autoAlpha: 0 }, 0)
+        .set(group, { opacity: 0, y: drop }, 0)
+        /**
+         * Falls in from above the screen at a size far past its own and settles
+         * to it in the middle — the headline arriving rather than fading up.
+         * One move on the whole block: a per-character stagger on top of a
+         * scale this large reads as two effects fighting, and the scale is the
+         * one carrying the beat.
+         *
+         * `power3.out` because it is an entrance: nearly all the travel happens
+         * at the front, so the size is legible almost immediately and the last
+         * of the movement is a settle rather than a slide.
+         */
+        .fromTo(
+          lead,
+          { autoAlpha: 0, scale: 3.2, y: () => -window.innerHeight * 0.5 },
+          { autoAlpha: 1, scale: 1, y: 0, duration: 1.5, ease: "power3.out" },
+          0,
+        )
+        // Held at rest long enough to be read before it goes.
+        .to(
+          lead,
+          { autoAlpha: 0, y: -90, duration: 0.6, ease: "power2.in" },
+          2.6,
+        );
+
+      // Each claim rises into the middle, holds, and leaves upward — so the
+      // whole relay travels one way and reads as a single move rather than
+      // four separate entrances.
+      const FIRST = 3.5;
+      const EVERY = 1.4;
+      claims.forEach((c, i) => {
+        const at = FIRST + i * EVERY;
+        tl.fromTo(
+          c,
+          { autoAlpha: 0, y: 60 },
+          { autoAlpha: 1, y: 0, duration: 0.45, ease: "back.out(1.7)" },
+          at,
+        ).to(
+          c,
+          { autoAlpha: 0, y: -60, duration: 0.4, ease: "power2.in" },
+          at + 0.72,
+        );
+      });
+
+      // Everything the relay was standing in for, arriving at once and rising
+      // into place — which is what clears the room the deck needs.
+      const settle = FIRST + claims.length * EVERY + 0.5;
+      tl.to(
+        group,
+        { opacity: 1, y: 0, duration: 1.1, ease: "power2.out" },
+        settle,
+      )
+        // Handed over on the intro's last frame, which is the frame the deal
+        // starts on.
+        .set(row, { autoAlpha: 1 }, settle + 1.1);
+    }, el);
 
     return () => ctx.revert();
-  }, [el]);
+  }, [section, relay, title, sub, choose]);
 }
 
 /**
@@ -259,6 +397,13 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
               centreOffset(t) + seat(t).width * (PILE[i]?.dx ?? 0),
             // Below the row and off the foot of the pinned screen, so the deck
             // rises into view rather than being parked in the layout.
+            //
+            // Only card 0 is ever seen in this state, and only for an instant:
+            // a staggered tween has not started its later targets at progress
+            // 0, so four of the five carry no transform at all until their turn
+            // comes. That is why the ROW is hidden until the deal begins rather
+            // than this being asked to park the deck out of sight — it can only
+            // ever move the one card GSAP has actually rendered.
             y: (i: number, t: Element) =>
               seat(t).height * (0.95 + (PILE[i]?.dy ?? 0)),
             rotate: (i: number) => PILE[i]?.r ?? 0,
@@ -279,17 +424,28 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
               // viewport until its bottom reaches the bottom, which is exactly
               // the stretch the sticky section is stuck for.
               trigger: runway ?? row,
-              start: "top top",
+              // Picks up where the intro leaves off rather than at the top of
+              // the pinned window — the headline and its claims have the front
+              // of it to themselves.
+              start: () =>
+                "top top-=" +
+                (runway ? (runway.offsetHeight - window.innerHeight) * DEAL_AT : 0),
               end: () =>
                 "+=" +
                 (runway
                   ? runway.offsetHeight - window.innerHeight
                   : window.innerHeight) *
-                  0.72,
+                  DEAL_SPAN,
               scrub: 0.6,
               invalidateOnRefresh: true,
               onLeave: () => el.toggleAttribute("data-landed", true),
               onEnterBack: () => el.toggleAttribute("data-landed", false),
+              // `onLeave` only fires on an actual crossing, so a reload with
+              // the browser restoring a scroll position past the deal would
+              // leave the deck landed but unflagged — and the shop links,
+              // which wait on that flag, invisible for good.
+              onRefresh: (self) =>
+                el.toggleAttribute("data-landed", self.progress >= 1),
             },
           },
         );
@@ -375,11 +531,81 @@ function useLabelCycle(host: React.RefObject<HTMLElement | null>) {
   }, [host]);
 }
 
+/**
+ * Below 640px the row is a snap carousel — `useCardDeal` sits the deck down face
+ * up there rather than dealing into a box that scrolls — and a row that scrolls
+ * sideways with no affordance is a row most people never scroll. These are that
+ * affordance: one card per press, and the snap does the landing.
+ *
+ * The step is measured off a real card rather than assumed, so it stays correct
+ * at whichever of the two widths `.episodes__card` resolves to.
+ */
+function DeckNav({ row }: { row: React.RefObject<HTMLUListElement | null> }) {
+  const [at, setAt] = useState({ start: true, end: false });
+
+  useEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    // A pixel of slack: scrollLeft is fractional once the snap has landed.
+    const read = () =>
+      setAt({
+        start: el.scrollLeft <= 1,
+        end: el.scrollLeft >= el.scrollWidth - el.clientWidth - 1,
+      });
+    read();
+    el.addEventListener("scroll", read, { passive: true });
+    window.addEventListener("resize", read);
+    return () => {
+      el.removeEventListener("scroll", read);
+      window.removeEventListener("resize", read);
+    };
+  }, [row]);
+
+  const page = (dir: 1 | -1) => {
+    const el = row.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>(".episodes__card");
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
+    const step = card ? card.offsetWidth + gap : el.clientWidth;
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
+  };
+
+  return (
+    <div className="episodes__nav">
+      <button
+        className="episodes__arrow"
+        type="button"
+        onClick={() => page(-1)}
+        disabled={at.start}
+        aria-label="Previous episode"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 4 7 12l8 8" />
+        </svg>
+      </button>
+      <button
+        className="episodes__arrow"
+        type="button"
+        onClick={() => page(1)}
+        disabled={at.end}
+        aria-label="Next episode"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m9 4 8 8-8 8" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 export function Episodes() {
   const section = useRef<HTMLElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
   const label = useRef<HTMLParagraphElement>(null);
-  useTitleSlam(title);
+  const sub = useRef<HTMLParagraphElement>(null);
+  const relay = useRef<HTMLDivElement>(null);
+  const row = useRef<HTMLUListElement>(null);
+  useIntroSequence(section, relay, title, sub, label);
   useCardDeal(section);
   useLabelCycle(label);
 
@@ -412,7 +638,7 @@ export function Episodes() {
           ))}
         </h2>
 
-        <p className="episodes__sub">
+        <p className="episodes__sub" ref={sub}>
           5 sports. 5 leagues
           <br />
           One main character &ndash; <em>YOU</em>
@@ -446,7 +672,22 @@ export function Episodes() {
           </svg>
         </p>
 
-        <ul className="episodes__row">
+        {/* Over the pinned screen, not in its flow: the relay has to sit in the
+            middle of the window whatever the header underneath it is doing. */}
+        <div className="episodes__relay" aria-hidden="true" ref={relay}>
+          {RELAY.map((r) => (
+            <span
+              className="episodes__slide"
+              key={r.id}
+              data-slide={r.id}
+              data-hot={r.hot || undefined}
+            >
+              {r.text}
+            </span>
+          ))}
+        </div>
+
+        <ul className="episodes__row" ref={row}>
           {EPISODES.map((ep) => (
             <li className="episodes__card" key={ep.id}>
               {/* Float on the outside, deal on the inside: two owners of one
@@ -463,9 +704,21 @@ export function Episodes() {
                   </div>
                 </div>
               </div>
+              {/* Under the card, not on it: the poster is the artwork and this
+                  is a control. It waits for `data-landed` — the deck's own
+                  "dealt and still" flag — because a row of buttons sitting in
+                  their final places while the cards are still flying in reads
+                  as a broken layout rather than a deliberate one.
+                  The name is for assistive tech: five links all called "Shop"
+                  are a list of nothing. */}
+              <a className="ecard__shop" href={`#tee-${ep.id}`}>
+                Shop<span className="sr-only"> {ep.title}</span>
+              </a>
             </li>
           ))}
         </ul>
+
+        <DeckNav row={row} />
       </section>
     </div>
   );

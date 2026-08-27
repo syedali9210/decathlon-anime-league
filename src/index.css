@@ -345,7 +345,14 @@ body::-webkit-scrollbar {
    First leg of the page-length ramp — see .products for the next. */
 .episodes-runway {
   position: relative;
-  height: 230svh;
+  /* Long enough to hold the whole sequence: the headline riding up from the
+     foot of the screen and landing a letter at a time, then four claims each
+     taking the middle alone and leaving, then the header arriving in its place,
+     and only then the deal and its hold. Seven beats before a card is dealt,
+     and each of them wants roughly a third of a screen of scroll to itself —
+     at 230svh they overlapped into one event, and at 420svh they still went by
+     too fast to read. */
+  height: 560svh;
   overflow: clip;
   background:
     linear-gradient(180deg, #000 0%, rgb(120 81 174 / 0.5) 100%),
@@ -456,6 +463,15 @@ body::-webkit-scrollbar {
   scroll-snap-align: center;
 }
 
+/* Shorter here, because the deal does not run at this width — the deck is sat
+   down face up — so the back half of a 360svh runway would be scroll with
+   nothing on it. The intro still plays; it just gets most of the window. */
+@media (max-width: 640px) {
+  .episodes-runway {
+    height: 340svh;
+  }
+}
+
 @media (max-width: 640px) {
   .episodes__row {
     overflow-x: auto;
@@ -479,6 +495,57 @@ body::-webkit-scrollbar {
   .episodes__row {
     padding-block: 24px 12px;
   }
+}
+
+/* ── deck pager ──────────────────────────────────────────────────────────── */
+
+/* The row only scrolls at the narrow breakpoint, so the arrows only exist
+   there — above it all five cards are on screen and there is nothing to page. */
+.episodes__nav {
+  display: none;
+  gap: 16px;
+  margin-top: clamp(8px, 1.4svh, 18px);
+}
+
+@media (max-width: 640px) {
+  .episodes__nav {
+    display: flex;
+  }
+}
+
+.episodes__arrow {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.35);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    opacity 200ms ease,
+    background-color 160ms ease;
+}
+
+.episodes__arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.episodes__arrow:not(:disabled):active {
+  background: var(--c-pink);
+}
+
+.episodes__arrow svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* Reserve the poster's 248:379 before the SVG lands so the row never reflows. */
@@ -510,6 +577,54 @@ body::-webkit-scrollbar {
 
 .episodes__sub em {
   font-style: normal;
+  color: var(--c-pink);
+}
+
+/* ── the intro relay ─────────────────────────────────────────────────────── */
+
+/* Five title cards sharing the middle of the pinned screen, one at a time. All
+   in one grid cell so nothing reflows as they take turns, and out of the flow
+   so the header keeps its own layout underneath. */
+.episodes__relay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-inline: var(--gutter);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* `opacity: 0` here and not in the timeline, so the one state this can be left
+   in without JS is the invisible one — under reduced motion the hook bails and
+   the page is just its layout, with the header and copy plainly on show. */
+.episodes__slide {
+  grid-area: 1 / 1;
+  margin: 0;
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  /* Smaller than the headline it follows, so the claims read as its answer
+     rather than as five headlines in a row. */
+  font-size: clamp(1.4rem, min(5.2vw, 7svh), 3.6rem);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: #fff;
+  opacity: 0;
+}
+
+/* The headline keeps the size and measure it has in the layout — this is the
+   same title arriving, not a different one. */
+.episodes__slide[data-slide='title'] {
+  max-width: min(78%, 1100px);
+  font-size: clamp(1.5rem, min(6.5vw, 9svh), 5.5rem);
+  line-height: 1;
+  letter-spacing: normal;
+}
+
+.episodes__slide[data-hot] {
   color: var(--c-pink);
 }
 
@@ -568,6 +683,13 @@ body::-webkit-scrollbar {
    before it rather than to it. */
 .episodes__card {
   perspective: 1400px;
+  /* So the shop link under it can be a share of the CARD rather than of the
+     window. The card is 190px in the carousel and 248px at full size, and the
+     button has to stay in proportion across that whole range — which a viewport
+     query cannot do, because the card's width is capped while vw is not.
+     Verified not to flatten the 3D: `.ecard` keeps `preserve-3d` and its flip
+     matrix is unchanged with this on. */
+  container-type: inline-size;
 }
 
 /* Float outside, deal inside. GSAP owns `.ecard`'s transform for the whole
@@ -673,6 +795,108 @@ body::-webkit-scrollbar {
   height: 100%;
 }
 
+/* The one thing in the deck that does anything. It is the deck's whole
+   clickable indicator: the posters were inert, and a card that floats and flips
+   but does nothing reads as decoration.
+
+   Always on rather than revealed on hover, because the custom cursor — which is
+   the affordance everywhere else on this site — runs on fine pointers only, and
+   this row is a snap carousel on a phone. Hover-only would have left the touch
+   visitor with nothing at all.
+
+   It carries the same pill the line-up's price does: pink, hard black rule, and
+   a flat comic offset with no blur. `Cursor.tsx` already morphs the pointer to
+   SHOP over anything with an href, so on a fine pointer the two agree. */
+.ecard__shop {
+  display: grid;
+  place-items: center;
+  /* Hugs its own text and centres under the card, rather than filling the
+     column — it is a button, not a bar. */
+  width: fit-content;
+  margin: clamp(8px, 4cqw, 15px) auto 0;
+  min-height: clamp(32px, 15cqw, 40px);
+  /* Keyed to the card like everything else here. Left in `em` it stayed a fixed
+     35px while the card shrank to 140px between the carousel breakpoint and the
+     width where five cards fit properly — which made the pill 53% of the card
+     and read as a bar rather than a button. The `em` floor is what stops the
+     text touching the rule at the very bottom of the range. */
+  padding-inline: clamp(0.9em, 7cqw, 1.6em);
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  /* Both keyed to the card, so the button is the same share of it whether the
+     card is 190px in the carousel or 248px at full size. */
+  font-size: clamp(11px, 5.2cqw, 13px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  color: #000;
+  background: var(--c-pink);
+  border: 2px solid #000;
+  border-radius: 25px;
+  filter: drop-shadow(-2px 2px 0 #000);
+
+  /* Held back until the deck has dealt itself out and come to rest. */
+  opacity: 0;
+  translate: 0 6px;
+  pointer-events: none;
+
+  /* Named properties, not `all`: the pill also carries a filter that has no
+     business being tweened. The arrival delay is on the two reveal properties
+     ONLY — put it on the shorthand and every hover would be late by up to a
+     quarter of a second, which is the whole budget for a hover. */
+  transition:
+    opacity 260ms ease-out var(--shop-in, 0ms),
+    translate 260ms ease-out var(--shop-in, 0ms),
+    transform 160ms ease-out,
+    background-color 160ms ease-out;
+}
+
+.episodes[data-landed] .ecard__shop {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+
+/* They arrive in the order the cards were dealt in, rather than all at once. */
+.episodes__card:nth-child(2) .ecard__shop {
+  --shop-in: 60ms;
+}
+.episodes__card:nth-child(3) .ecard__shop {
+  --shop-in: 120ms;
+}
+.episodes__card:nth-child(4) .ecard__shop {
+  --shop-in: 180ms;
+}
+.episodes__card:nth-child(5) .ecard__shop {
+  --shop-in: 240ms;
+}
+
+/* Gated, because a touch device fires hover on tap and would leave the last
+   card tapped stuck in its hover colour. */
+@media (hover: hover) and (pointer: fine) {
+  .ecard__shop:hover {
+    background: var(--c-gold);
+  }
+}
+
+.ecard__shop:active {
+  transform: scale(0.97);
+}
+
+/* White, not the site's pink: the pill it sits on is already pink. */
+.ecard__shop:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+/* A finger needs more than a pointer does, whatever the proportion says. */
+@media (pointer: coarse) {
+  .ecard__shop {
+    min-height: 44px;
+  }
+}
+
 /* ── products ────────────────────────────────────────────────────────────── */
 
 /* Second leg: picks up the violet the episodes section ends on and runs to the
@@ -695,12 +919,23 @@ body::-webkit-scrollbar {
   position: relative;
   max-width: 1385px;
   margin-inline: auto;
+  /* So the grid's gaps can be written as a share of the grid's WIDTH and still
+     be lengths — see .products__grid. */
+  container-type: inline-size;
 }
 
 .products__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12.4% 3.97%; /* 90 and 55 of the 1385 grid */
+  /* `cqw`, not `%`. A percentage ROW gap does not resolve against the grid's
+     inline size the way a column gap does — it resolves against the row track
+     total, and the resulting gap is then left out of the grid's own height. The
+     last row was laid out 135px below the box the section had sized itself to,
+     and `.lineup` — which starts exactly at that bottom edge, with an opaque
+     gradient — painted straight over it. That is the row of cards that looked
+     cut off. Against the stage container these are the same fractions of the
+     same width, but as lengths, so the height adds up. */
+  gap: 12.4cqw 3.97cqw; /* 55 of the 1385 grid on the column axis */
   margin: 0;
   padding: 0;
   list-style: none;
@@ -713,8 +948,19 @@ body::-webkit-scrollbar {
 .pcard {
   position: relative;
   aspect-ratio: 425 / 723;
+  /* The episode deck's SHOP links land on these; without the margin the card
+     arrives flush against the top of the window with its own section's padding
+     scrolled past. */
+  scroll-margin-block: clamp(24px, 10vh, 120px);
   border-radius: 5.53%/3.25%; /* 23.5 of 425 and of 723 */
   background: #000;
+  /* Everything else in this card is a percentage of the card; the type was the
+     one exception, keyed to the viewport. That broke every time the grid
+     reflowed — two-up on a tablet makes the card BIGGER than three-up on a
+     laptop, so the labels got smaller as the cards grew, and two-up on a phone
+     made 12px type on a 165px card that fell out of its own plate. Container
+     units tie the type to the card like everything else. */
+  container-type: inline-size;
 }
 
 .pcard__photo {
@@ -748,7 +994,10 @@ body::-webkit-scrollbar {
   gap: 8px;
   color: #e4e4e4;
   font-family: 'Roboto Flex', system-ui, sans-serif;
-  font-size: clamp(9px, 0.75vw, 12px);
+  /* 2.82cqi is the artboard's own ratio — 12px of type on a 425px card — so a
+     full-size card is pixel-identical to the board and every smaller one is a
+     true scale of it. The floor is legibility. */
+  font-size: clamp(9px, 2.82cqi, 12px);
   line-height: normal;
 }
 
@@ -889,28 +1138,416 @@ body::-webkit-scrollbar {
   width: 20.4%;
 }
 
-/* Two columns, then one, before the cards get too small to read. */
+/* Two columns below this; the cards get unreadable three-up. */
 @media (max-width: 900px) {
   .products__grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8% 4%;
+    /* Two-up cards are ~1.6x wider, so the row gap tracks them to stay the same
+       share of a card's height as it is three-up. */
+    gap: 20cqw 4cqw;
+  }
+  /* The props are placed against a 3-up grid — that is what `left: 98%` is
+     measured on. Once the grid reflows they sit on top of the cards, and the
+     two that hang off the right edge get sliced in half by the section's clip.
+     They go with the layout they belong to. */
+  .products__prop {
+    display: none;
   }
 }
 
-@media (max-width: 560px) {
-  .products__grid {
-    /* Two up, not one: a single column made the cards enormous and the section
-       endless to scroll. */
-    grid-template-columns: repeat(2, 1fr);
-    gap: 9% 4%;
-  }
+/* The plate the meta sits in is 6.64% of the card's height. That holds two
+   lines as long as the type can keep shrinking with the card — but the type
+   floors at 9px for legibility, and below a ~280px card two 9px lines no longer
+   fit. On a phone two-up that is a 165px card and a 19px plate: the meta was
+   spilling 18px out of the bottom of the card.
+   So below that size it stops being a plate label and becomes a caption under
+   the card, where the row gap gives it all the room it needs.
+   Keyed to the CARD, not the window, because the card's width does not track
+   the viewport's — the grid reflows underneath it. A three-up laptop and a
+   two-up phone both land here; a two-up tablet, whose cards are bigger than
+   either, correctly does not. */
+@container (max-width: 280px) {
   .pcard__meta {
-    font-size: 12px;
+    top: 100%;
+    margin-top: 0.5em;
+    font-size: clamp(10px, 6.7cqi, 12px);
   }
-  /* The props are placed against a 3-up grid; they land on top of the cards
-     once it reflows. */
-  .products__prop {
-    display: none;
+}
+
+/* ── the ground ────────────────────────────────────────────────────────── */
+
+/* Figma 271-5 and 271-5067. Two columns on a 1596 artboard: the claim at x=112
+   in a 412 column, the collage at x=524 in a 976x918 frame. Everything inside
+   the collage is a percentage of that frame, so it scales from the column width
+   alone the same way the product card does.
+
+   Both boards put the frame at the same place and size, so this is one screen
+   whose collage changes character rather than two screens. What differs between
+   them lives in the [data-character] blocks below: where the grid and the
+   athlete sit, and the two colours.
+
+   Fourth leg of the page-length ramp. The board runs black -> #453b73 ->
+   #ec9eaf, and the dark top is most of why the sun and the shot carry: dropping
+   it for a straight crimson-to-violet ramp washed the whole section out. So the
+   board's ramp is kept from 20% down (#161326 IS its colour at that mark) and
+   only the first fifth is invented, easing out of the crimson `.products` ends
+   on so the seam does not read as a cut. */
+.ground {
+  overflow-x: clip; /* the athlete's leading arm crosses the frame's left edge */
+  background: linear-gradient(
+    180deg,
+    #c52354 0%,
+    #161326 20%,
+    #453b73 61.4%,
+    #ec9eaf 100%
+  );
+  /* 217 of 1596, top and bottom -- the board's own symmetric margin. */
+  padding: clamp(56px, 13.6vw, 217px) var(--gutter);
+}
+
+/* The board's content box is 1388 wide and splits 412 / 976, with no gutter
+   between the columns: the athlete is meant to reach back under the claim.
+
+   29.68% is the board's own split. It was widened to 32% for a while, because
+   Roboto Flex requested with only `wght` set this copy about 5% wider than the
+   file's own does — enough that WHISTLE overhung the column and IS YOURS broke
+   in two, and the claim's ten-line stack is the design here. Asking Google for
+   the full axis set (see index.html) fixed the metrics at source, and the
+   board's own number now sits in the middle of the window that holds those
+   breaks: the column has to be at least 27.96% for IS YOURS to stay whole and
+   under 31.23% for FROM THE to still wrap.
+
+   A container, so the claim can be sized against THIS box rather than the
+   window. Keyed to vw it could not hold those breaks: the box stops growing at
+   1385 while vw does not, so the ratio of column to type drifted and the stack
+   reflowed somewhere past a 1486px window. */
+.ground__inner {
+  max-width: 1385px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: 29.68% 1fr;
+  align-items: start;
+  container-type: inline-size;
+}
+
+.ground__title {
+  margin: 0;
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  /* 700, not the 800 every other headline on the site uses: the board's own
+     paragraphs are Bold, and at 800 the column loses a line to wrapping. */
+  font-weight: 700;
+  /* 96 of the board's 1388-wide content box. */
+  font-size: clamp(28px, 6.92cqw, 96px);
+  line-height: normal;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  color: #f3f3f3;
+}
+
+/* Each phrase starts its own line; the long ones wrap inside the column, which
+   is what gives the board its ten-line stack at full width and a shorter one as
+   the column narrows. */
+.ground__line {
+  display: block;
+}
+
+.ground__line[data-hot] {
+  color: #ff1df4;
+}
+
+/* -- the collage deck ----------------------------------------------------- */
+
+/* Every character sits in the same grid cell, so the frame never resizes as one
+   turns over and the two can cross-fade without either leaving the layout. The
+   frame sits 15px lower than the claim on the board; a percentage margin
+   resolves against the inline size, so this is 15 of 1388. */
+.ground__deck {
+  display: grid;
+  margin-top: 1.08%;
+}
+
+.ground__slide {
+  grid-area: 1 / 1;
+  opacity: 0;
+  /* Hidden rather than merely transparent, so the character not on show is out
+     of the accessibility tree and out of the pointer's way. Held until the fade
+     has finished, which is what the delayed visibility step is. */
+  visibility: hidden;
+  transition:
+    opacity 700ms ease,
+    visibility 0s linear 700ms;
+}
+
+.ground__slide[data-on] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 700ms ease;
+}
+
+/* `aspect-ratio` rather than a height, so the frame keeps the board's 976:918
+   whatever the column resolves to, and every piece inside can be positioned as
+   a plain percentage of it. A container as well, so the one thing in here that
+   is type rather than artwork scales with the frame instead of with the window. */
+.ground__art {
+  position: relative;
+  aspect-ratio: 976.335 / 918.48;
+  container-type: inline-size;
+}
+
+.ground__art > * {
+  position: absolute;
+  margin: 0;
+}
+
+/* Four of the pieces are inlined SVG rather than <img>: parts of the athlete
+   turn, the pitch's rungs step down it and the disc's rim marks chase each
+   other around it, and none of that is reachable through an <img>. The sun is
+   inlined for a different reason -- it is one shape in two colours, so it takes
+   its fill from `currentColor` rather than shipping twice. The ratios are
+   declared because the athlete's arrives late, being fetched, and the box has
+   to hold its place until it does. */
+.ground__pitch svg,
+.ground__sun svg,
+.ground__player svg,
+.ground__trinket svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Widths only -- every one of these keeps its own intrinsic ratio, so the
+   height follows and there is one number per piece to keep true. */
+.ground__pitch {
+  left: var(--pitch-x);
+  top: var(--pitch-y);
+  width: 53.77%;
+  aspect-ratio: 525 / 243.56;
+}
+
+.ground__sun {
+  left: 18.13%;
+  top: 0;
+  width: 74.87%;
+  aspect-ratio: 1;
+  color: var(--sun-ink);
+}
+
+/* The shot is the only piece the board rotates about its own centre, and it is
+   in the same place on every board. Sized by width with the ratio pinned,
+   because it is a photo rather than a vector and has no business being
+   stretched. */
+.ground__shot {
+  left: 38.21%;
+  top: 18.86%;
+  width: 56.25%;
+  aspect-ratio: 549.214 / 704.999;
+  object-fit: cover;
+  rotate: 9.43deg;
+}
+
+.ground__player {
+  left: var(--player-x);
+  top: var(--player-y);
+  width: var(--player-w);
+  aspect-ratio: var(--player-ratio);
+}
+
+/* The board sets this in Shamgod Bold Italic, which is not a font this project
+   has -- see the note in Ground.tsx. Roboto Flex 800 condensed carries the same
+   sticker: the colour, the 0.11em tracking, the hard black offset and the tilt
+   are all the board's own numbers.
+   Shamgod is a condensed face. Roboto Flex can now actually go there: asking
+   Google for the width axis as a range rather than leaving it to a default
+   brought `wdth` 25 down to 63% of normal, where before it bought only 15%.
+   That is the difference between a condensed cut and a small one — the sticker
+   still fits the FOOTPRINT the board gives it, which is the reproducible part,
+   but it does so at a quarter more cap height than when the only lever was
+   shrinking it. Still undistorted: no sideways squash to fake the missing
+   width. One size serves all four words: the board sets them at the same 96px,
+   so the five-letter one is simply wider. */
+.ground__word {
+  left: var(--word-x);
+  top: var(--word-y);
+  translate: -50% -50%;
+  rotate: var(--word-rotate);
+  transform: skewX(-12deg);
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  font-stretch: 25%;
+  font-size: clamp(22px, 7.5cqw, 74px);
+  line-height: normal;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--word-ink);
+  text-shadow: 0.042em 0.083em 0 #000;
+}
+
+/* -- per character -------------------------------------------------------- */
+
+/* The five pieces every board has. What changes between them is where the grid
+   and the athlete sit, the sticker's colour and tilt, and the sun's one fill.
+   Everything else a board carries is a trinket, and lives in Ground.tsx. */
+
+/* Figma 271-7. */
+.ground__art[data-character="apex-kick"] {
+  --pitch-x: 1.84%;
+  --pitch-y: 66.2%;
+  --player-x: -1.13%;
+  --player-y: 26.67%;
+  --player-w: 65.71%;
+  --player-ratio: 641.54 / 562.24;
+  --word-x: 17.84%;
+  --word-y: 45.15%;
+  --word-rotate: -23.95deg;
+  --word-ink: #ff9dc6;
+  --sun-ink: #d33a7a;
+}
+
+/* Figma 271-5067. The grid has shifted a little down and right to sit under a
+   player who stands further into it. */
+.ground__art[data-character="sky-smash"] {
+  --pitch-x: 2.66%;
+  --pitch-y: 70.23%;
+  --player-x: 12.24%;
+  --player-y: 23.41%;
+  --player-w: 40.48%;
+  --player-ratio: 395.181 / 660.5;
+  --word-x: 49.02%;
+  --word-y: 15.27%;
+  --word-rotate: -23.95deg;
+  --word-ink: #ffae00;
+  --sun-ink: #b86500;
+}
+
+/* Figma 274-5704. The batter is the tallest of the four — he reaches from 6.75%
+   of the frame down to 85.6% of it — and the sticker leans back to -11.76deg
+   with him. */
+.ground__art[data-character="crick-stryke"] {
+  --pitch-x: 6.97%;
+  --pitch-y: 66.52%;
+  --player-x: 15.47%;
+  --player-y: 6.75%;
+  --player-w: 42.04%;
+  --player-ratio: 410.5 / 724.883;
+  --word-x: 43.16%;
+  --word-y: 8.22%;
+  --word-rotate: -11.76deg;
+  --word-ink: #83a8ff;
+  --sun-ink: #0037b8;
+}
+
+/* Figma 275-6573. */
+.ground__art[data-character="spin-ignite"] {
+  --pitch-x: -1.43%;
+  --pitch-y: 60.1%;
+  --player-x: 4.3%;
+  --player-y: 19.05%;
+  --player-w: 36.26%;
+  --player-ratio: 354 / 568.346;
+  --word-x: 36.14%;
+  --word-y: 11.76%;
+  --word-rotate: -11.76deg;
+  --word-ink: #ff7c44;
+  --sun-ink: #c65829;
+}
+
+/* -- trinkets ------------------------------------------------------------- */
+
+/* The odds and ends each board has and the others do not. One rule for all of
+   them: the geometry arrives as custom properties from the character data,
+   because the list is a different length and shape on every board.
+
+   `--h` is only set for the one piece with no artwork behind it — the tennis
+   board's black bar, which is a rectangle and nothing else, so there is no
+   intrinsic ratio for the height to follow.
+
+   The tilt goes in `transform` rather than in `rotate`, so that the idle bob
+   below can be composed IN FRONT of it. As the `rotate` property it is applied
+   after `transform`, which put the bob's translate in the tilted frame: the
+   shuttle, turned -135deg, drifted diagonally down-left instead of bobbing. */
+.ground__trinket {
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  height: var(--h, auto);
+  transform: rotate(var(--r, 0deg));
+  transform-origin: var(--origin, 50% 50%);
+}
+
+/* The board draws this one, and only this one, as a plain filled rectangle. */
+.ground__trinket[data-trinket="bar"] {
+  background: #000;
+}
+
+/* -- idle ----------------------------------------------------------------- */
+
+/* Nothing here is scroll-driven -- the collage is a still. It gets the same
+   idle bob the props and the deck have, on periods that do not divide into each
+   other so the pieces never move as one mass. Paused off-screen by the
+   [data-idle] rule at the foot of this file.
+   The lift is a share of the FRAME, not of each piece: written as a percentage
+   of its own height it moved the 729px sun ten times further than the 163px
+   disc, and the collage breathed lopsidedly. */
+.ground__sun,
+.ground__player,
+.ground__trinket {
+  animation: ground-float var(--ground-float, 4.7s) ease-in-out infinite alternate;
+  animation-delay: var(--ground-phase, 0s);
+}
+
+.ground__sun {
+  --ground-float: 6.2s;
+  --ground-phase: -2.1s;
+  --ground-lift: -0.45cqw;
+}
+.ground__player {
+  --ground-float: 4.7s;
+  --ground-phase: -0.8s;
+  --ground-lift: -0.9cqw;
+}
+
+/* Both ends spelled out, and the tilt carried through both: an implicit `from`
+   would take the element's own transform, which already has the lift in it. The
+   translate is listed first so it is applied last, in the frame's own upright
+   space rather than in whatever the piece is tilted to. */
+@keyframes ground-float {
+  from {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  to {
+    transform: translateY(var(--ground-lift, -0.8cqw)) rotate(var(--r, 0deg));
+  }
+}
+
+/* One column below this: the claim column is 32% of the page, which stops being
+   able to hold a word like WHISTLE at a readable size, and the collage stops
+   being able to hold an athlete. Stacked, the claim gets the full width and can
+   run bigger than the two-column layout allows. */
+@media (max-width: 820px) {
+  .ground__inner {
+    grid-template-columns: 1fr;
+    gap: clamp(24px, 5vw, 48px);
+  }
+
+  .ground__title {
+    font-size: clamp(28px, 11cqw, 76px);
+  }
+
+  .ground__deck {
+    margin-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ground__sun,
+  .ground__player,
+  .ground__trinket {
+    animation: none;
+  }
+
+  .ground__slide {
+    transition-duration: 1ms;
   }
 }
 
@@ -921,7 +1558,17 @@ body::-webkit-scrollbar {
   overflow: clip;
   /* Third leg: on from the crimson above, settling into violet for the foot of
      the page. */
-  background: linear-gradient(180deg, #c52354 0%, #443a72 66%);
+  /* Picks up the pink `.ground` ends on and is back to that section's own
+     crimson by the end of the top padding — so the first title still sits on
+     the crimson it was designed against, and the hand-off happens in the space
+     above it. A length, not a percentage, because it has to line up with the
+     padding rather than with the section's height. */
+  background: linear-gradient(
+    180deg,
+    #ec9eaf 0%,
+    #c52354 clamp(64px, 11vw, 176px),
+    #443a72 66%
+  );
   /* The trailing space is what gives the stepping room to finish while this is
      the last section on the page; trim it once something follows. */
   padding: clamp(64px, 11vw, 176px) var(--gutter) clamp(200px, 55vh, 620px);
@@ -1428,6 +2075,11 @@ html[data-custom-cursor] * {
   .frame__curve-dash,
   .frame__ring-dash {
     animation: none;
+  }
+  /* The shop link keeps its fade — that is what tells you it has arrived — and
+     loses the travel. Reduced motion means gentler, not absent. */
+  .ecard__shop {
+    translate: none;
   }
   .hero-runway {
     height: 100svh;

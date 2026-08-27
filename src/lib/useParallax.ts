@@ -66,7 +66,10 @@ export function useParallax(host: RefObject<HTMLElement | null>) {
 export function useSmoothScroll() {
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const lenis = new Lenis({ lerp: 0.11 })
+    // `anchors`, so an in-page href is smooth-scrolled by Lenis rather than
+    // jumped to natively — a native jump moves the window while Lenis still
+    // believes it is somewhere else, and the page snaps back on the next frame.
+    const lenis = new Lenis({ lerp: 0.11, anchors: true })
     lenis.on('scroll', ScrollTrigger.update)
     const tick = (time: number) => lenis.raf(time * 1000)
     gsap.ticker.add(tick)

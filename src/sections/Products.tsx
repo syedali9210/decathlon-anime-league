@@ -6,6 +6,12 @@ import skySmash from '../assets/products/sky-smash.webp'
 import spinIgnite from '../assets/products/spin-ignite.webp'
 import leagueTee from '../assets/products/league-tee.webp'
 import rimCrush from '../assets/products/rim-crush.webp'
+import crickStrykeSm from '../assets/products/crick-stryke-sm.webp'
+import apexKickSm from '../assets/products/apex-kick-sm.webp'
+import skySmashSm from '../assets/products/sky-smash-sm.webp'
+import spinIgniteSm from '../assets/products/spin-ignite-sm.webp'
+import leagueTeeSm from '../assets/products/league-tee-sm.webp'
+import rimCrushSm from '../assets/products/rim-crush-sm.webp'
 import propFootball from '../assets/products/prop-football.svg?raw'
 import propCricketball from '../assets/products/prop-cricketball.svg?raw'
 import propShuttle from '../assets/products/prop-shuttle.svg?raw'
@@ -20,13 +26,28 @@ import { animateProp } from './propMotion'
  * when there is one.
  */
 const PRODUCTS = [
-  { id: 'crick-stryke', name: 'Crick-Stryke', photo: crickStryke, sport: 'cricket' },
-  { id: 'apex-kick', name: 'Apex-Kick', photo: apexKick, sport: 'football' },
-  { id: 'sky-smash', name: 'Sky-Smash', photo: skySmash, sport: 'badminton' },
-  { id: 'spin-ignite', name: 'Spin-Ignite', photo: spinIgnite, sport: 'tennis' },
-  { id: 'league-tee', name: 'Spin-Ignite', photo: leagueTee, sport: 'tennis' },
-  { id: 'rim-crush', name: 'Rim-Crush', photo: rimCrush, sport: 'basketball' },
+  { id: 'crick-stryke', name: 'Crick-Stryke', photo: crickStryke, small: crickStrykeSm, width: 364, sport: 'cricket' },
+  { id: 'apex-kick', name: 'Apex-Kick', photo: apexKick, small: apexKickSm, width: 480, sport: 'football' },
+  { id: 'sky-smash', name: 'Sky-Smash', photo: skySmash, small: skySmashSm, width: 480, sport: 'badminton' },
+  { id: 'spin-ignite', name: 'Spin-Ignite', photo: spinIgnite, small: spinIgniteSm, width: 480, sport: 'tennis' },
+  { id: 'league-tee', name: 'Spin-Ignite', photo: leagueTee, small: leagueTeeSm, width: 480, sport: 'tennis' },
+  { id: 'rim-crush', name: 'Rim-Crush', photo: rimCrush, small: rimCrushSm, width: 480, sport: 'basketball' },
 ]
+
+/**
+ * What the photo actually measures, so the browser can pick a file rather than
+ * always taking the widest. Measured, not guessed: the window is two cards wide
+ * up to the 900px reflow and three above it, and the grid stops growing once the
+ * stage hits its 1385 cap.
+ *
+ *   375px window -> 145px photo -> 38.7vw
+ *  1440px window -> 361px photo -> 25.1vw
+ *  1600px window and up          -> 373px, fixed
+ *
+ * Order matters — the first matching clause wins.
+ */
+const PHOTO_SIZES =
+  '(max-width: 900px) 39vw, (min-width: 1600px) 373px, 25vw'
 
 const COLOURWAYS = ['#e4e4e4', '#0087c0']
 
@@ -75,12 +96,15 @@ export function Products() {
       <div className="products__stage">
         <ul className="products__grid">
           {PRODUCTS.map((p) => (
-            <li className="pcard" key={p.id}>
+            // The episode deck's SHOP links land here.
+            <li className="pcard" id={`tee-${p.id}`} key={p.id}>
               {/* Photo sits under the chrome and is clipped to the chamfered
                   window the artwork cuts for it — see --pcard-window. */}
               <img
                 className="pcard__photo"
                 src={p.photo}
+                srcSet={`${p.small} 320w, ${p.photo} ${p.width}w`}
+                sizes={PHOTO_SIZES}
                 alt={`${p.name} tee, worn on a ${p.sport} court`}
                 loading="lazy"
                 decoding="async"

@@ -6,11 +6,18 @@
     <meta name="theme-color" content="#000000" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Roboto Flex carries the section headline (800) and the product copy
-         (600/400). Every other axis in the Figma export is Roboto Flex's own
-         default, so weight is the only one that needs requesting. -->
+    <!-- Every axis asked for by RANGE, which is the whole point of this line.
+         Requested as `wdth,wght@25..151,400..800` the width axis was served
+         almost inert — `wdth` 25 bought about 15% of width, so the stickers
+         could only be made smaller, never narrower, and the ground claim set
+         ~5% wide of the board and lost a line. Asking for `opsz,wdth,wght` over
+         their full ranges serves the real variable font: `wdth` 25 now measures
+         63% of normal, and the claim's column is back on the board's own
+         number. `opsz` is in there because it ships with that font and the
+         browser applies it by default anyway — leaving it out of the request
+         and on in the renderer is what made the two disagree. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;600;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&display=swap"
       rel="stylesheet"
     />
     <title>Anime Sports League — Decathlon</title>

@@ -1,0 +1,36 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="162.977" height="162.977" viewBox="0 0 162.977 162.977" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 115">
+<g id="Ellipse 16" filter="url(#filter0_d_288_41976)">
+<path d="M133.15 51.6617C137.067 58.446 139.61 65.9354 140.632 73.7022C141.655 81.4691 141.137 89.3612 139.11 96.9281C137.082 104.495 133.584 111.589 128.815 117.804C124.046 124.019 118.1 129.233 111.316 133.15C104.531 137.067 97.0418 139.61 89.275 140.632C81.5082 141.655 73.616 141.137 66.0491 139.11C58.4821 137.082 51.3887 133.584 45.1737 128.815C38.9587 124.046 33.7438 118.1 29.8269 111.316L81.4886 81.4886L133.15 51.6617Z" fill="#2CC27E"/>
+</g>
+<line id="Line 35" x1="138.082" y1="62.5063" x2="144.082" y2="63.5063" stroke="white"/>
+<line id="Line 36" x1="140.082" y1="68.5063" x2="146.082" y2="69.5063" stroke="white"/>
+<line id="Line 37" x1="141.082" y1="78.5063" x2="147.082" y2="79.5063" stroke="white"/>
+<line id="Line 41" x1="141.082" y1="73.5063" x2="147.082" y2="74.5063" stroke="white"/>
+<line id="Line 38" x1="141.082" y1="87.5063" x2="147.082" y2="88.5063" stroke="white"/>
+<line id="Line 44" x1="142.082" y1="83.5063" x2="148.082" y2="84.5063" stroke="white"/>
+<line id="Line 39" x1="140.082" y1="98.5063" x2="146.082" y2="99.5063" stroke="white"/>
+<line id="Line 42" x1="141.082" y1="93.5063" x2="147.082" y2="94.5063" stroke="white"/>
+<line id="Line 40" x1="136.082" y1="108.506" x2="142.082" y2="109.506" stroke="white"/>
+<line id="Line 45" x1="132.082" y1="114.506" x2="138.082" y2="115.506" stroke="white"/>
+<line id="Line 46" x1="128.082" y1="120.506" x2="134.082" y2="121.506" stroke="white"/>
+<line id="Line 47" x1="125.082" y1="125.506" x2="131.082" y2="126.506" stroke="white"/>
+<line id="Line 48" x1="117.082" y1="131.506" x2="123.082" y2="132.506" stroke="white"/>
+<line id="Line 49" x1="110.082" y1="135.506" x2="116.082" y2="136.506" stroke="white"/>
+<line id="Line 50" x1="101.755" y1="138.39" x2="106.805" y2="141.781" stroke="white"/>
+<line id="Line 51" x1="94.2787" y1="139.584" x2="99.3289" y2="142.975" stroke="white"/>
+<line id="Line 52" x1="86.2787" y1="140.584" x2="91.3289" y2="143.975" stroke="white"/>
+<line id="Line 43" x1="138.082" y1="104.506" x2="144.082" y2="105.506" stroke="white"/>
+</g>
+<defs>
+<filter id="filter0_d_288_41976" x="29.8269" y="51.6617" width="118.316" height="93.4807" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="7" dy="4"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_288_41976"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_288_41976" result="shape"/>
+</filter>
+</defs>
+</svg>
