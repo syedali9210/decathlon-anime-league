@@ -8,9 +8,10 @@ gsap.registerPlugin(ScrollTrigger)
  * floor runs under all of them — and some are one board's own, so what is wired
  * depends on which character the collage is showing.
  *
- * All of them are loops, so all of them are linear: an eased loop reads as a
- * pulse, because the slow end of the ease lands in the middle of the picture
- * instead of at a boundary. Nothing here animates anything but a transform.
+ * All of them are loops, and the ones that CYCLE are linear: an eased cycle
+ * reads as a pulse, because the slow end of the ease lands in the middle of the
+ * picture instead of at a boundary. The arm swing is the exception and is eased
+ * — see the note over it. Nothing here animates anything but a transform.
  *
  * Everything is paused while the section is off screen — see the trigger at the
  * foot of the file. The CSS `[data-idle]` rule only reaches CSS animations, and
@@ -27,9 +28,12 @@ gsap.registerPlugin(ScrollTrigger)
  */
 const BALL_FILLS = ['#f1f1e2', '#00b663']
 
+/** A region in one athlete's own user units: x0, y0, x1, y1. */
+type Box = [number, number, number, number]
+
 type BallSpec = {
-  /** Region in the striker's own user units; a path joins if its centre is inside. */
-  box: [number, number, number, number]
+  /** A path joins if its centre is inside. */
+  box: Box
   /** Seconds per turn. Negative turns anticlockwise. */
   spin: number
 }
@@ -58,7 +62,7 @@ const BALLS: Record<string, BallSpec[]> = {
   ],
 }
 
-function centreIn(el: SVGGraphicsElement, [x0, y0, x1, y1]: BallSpec['box']) {
+function centreIn(el: SVGGraphicsElement, [x0, y0, x1, y1]: Box) {
   const b = el.getBBox()
   const cx = b.x + b.width / 2
   const cy = b.y + b.height / 2
@@ -278,6 +282,142 @@ function runRimTicks(svg: SVGSVGElement, out: gsap.core.Tween[]) {
   return () => spare.remove()
 }
 
+/* ── the arm ─────────────────────────────────────────────────────────────── */
+
+/**
+ * The batter's arms and bat, and the badminton player's racket arm, rock a
+ * degree either side of where the board drew them.
+ *
+ * The one eased loop on the page, and deliberately: this is a pendulum, not a
+ * cycle. Its slow ends ARE the picture's two extremes, so the ease lands where
+ * the motion actually turns round instead of in the middle of the swing.
+ *
+ * Picked out by region and turned as separate paths, like the balls above and
+ * for the same reason — the arm is not contiguous in the export, and collecting
+ * it into a group would lift it out of the order the board paints it in. The
+ * masks each board wraps its limbs in are matched by the region too, and have
+ * to be: mask and masked content only stay registered if they turn together.
+ * They always are both taken or both left, because Figma writes the mask's
+ * plate at the shape's own bounds — one bbox, so one answer from the test.
+ */
+type SwingSpec = {
+  /** The limb, in the athlete's own units. */
+  box: Box
+  /** The joint it turns about, in the same units. */
+  pivot: [number, number]
+  /** Degrees either side of rest. A whole degree is already plenty here. */
+  deg: number
+  /** Seconds for one pass. */
+  period: number
+  /** Paths the box is expected to take, so a re-export that moves them shows. */
+  n: number
+}
+
+/**
+ * apex-kick and spin-ignite have no entry: the footballer is mid-bicycle-kick
+ * with nothing to swing from, and nobody has asked for the tennis player yet.
+ */
+const SWINGS: Record<string, SwingSpec> = {
+  // Both arms, the gloves and the bat, turning at the near shoulder.
+  'crick-stryke': { box: [118, 0, 410, 330], pivot: [85, 285], deg: 0.9, period: 3.6, n: 47 },
+  // Racket, hand and forearm, turning at the elbow — the upper arm is drawn
+  // into the shirt and stays with it.
+  'sky-smash': { box: [0, 0, 135, 300], pivot: [48, 262], deg: 1.1, period: 4.3, n: 14 },
+}
+
+/**
+ * Widens the masks the turned paths are painted through, by the furthest any of
+ * them travels.
+ *
+ * Every limb in these exports goes through a Figma outside-stroke mask, and
+ * those masks pin their own region in user space — `maskUnits="userSpaceOnUse"`
+ * with a fixed x/y/width/height, and a white plate drawn at exactly that
+ * rectangle. Turning the paths inside one turns the plate but NOT the region,
+ * so the plate's edge swings out of it and the limb loses its outline along the
+ * side that left: transparent bites out of the arm, and a racket mesh whose
+ * edge crawls as it swings.
+ *
+ * Only the region moves. The plate keeps its size and its place among the
+ * paths, so what the mask cuts is unchanged — it simply stops being clipped.
+ *
+ * Written from the region the FILE carries, kept on the element, rather than
+ * from whatever is on it now: StrictMode runs this twice, and reading back a
+ * widened region would widen it again.
+ */
+function widenMasks(svg: SVGSVGElement, arm: SVGPathElement[], pad: number) {
+  const masks = new Set<SVGMaskElement>()
+  for (const p of arm) {
+    // The plate sits inside the mask; the paint carries a reference to it.
+    const own = p.closest('mask')
+    const ref = own ?? svg.querySelector(
+      `mask[id="${p.closest('[mask]')?.getAttribute('mask')?.slice(5, -1)}"]`,
+    )
+    if (ref) masks.add(ref as SVGMaskElement)
+  }
+
+  const SIDES = ['x', 'y', 'width', 'height'] as const
+  for (const m of masks) {
+    const kept = m.getAttribute('data-region') ?? SIDES.map((a) => m.getAttribute(a)).join(' ')
+    const region = kept.split(' ').map(Number)
+    if (region.length !== 4 || region.some(Number.isNaN)) continue
+
+    m.setAttribute('data-region', kept)
+    const [x, y, w, h] = region
+    m.setAttribute('x', `${x - pad}`)
+    m.setAttribute('y', `${y - pad}`)
+    m.setAttribute('width', `${w + pad * 2}`)
+    m.setAttribute('height', `${h + pad * 2}`)
+  }
+}
+
+function swingArm(svg: SVGSVGElement, character: string, out: gsap.core.Tween[]) {
+  const spec = SWINGS[character]
+  if (!spec) return
+
+  const arm = [...svg.querySelectorAll<SVGPathElement>('path')].filter((p) =>
+    centreIn(p, spec.box),
+  )
+  if (import.meta.env.DEV && arm.length !== spec.n) {
+    console.warn(
+      `[ground] ${arm.length} paths matched ${character}'s arm at ${spec.box}, ` +
+        `expected ${spec.n}. The art was probably re-exported; re-check ` +
+        'src/sections/groundMotion.ts.',
+    )
+  }
+  if (!arm.length) return
+
+  // Arc length at the furthest corner the turn carries, which is as far as any
+  // plate can leave its region, plus a couple of units for the joins.
+  const [px, py] = spec.pivot
+  const reach = Math.max(
+    ...arm.flatMap((p) => {
+      const b = p.getBBox()
+      return [
+        [b.x, b.y],
+        [b.x + b.width, b.y],
+        [b.x, b.y + b.height],
+        [b.x + b.width, b.y + b.height],
+      ].map(([x, y]) => Math.hypot(x - px, y - py))
+    }),
+  )
+  widenMasks(svg, arm, Math.ceil((reach * spec.deg * Math.PI) / 180) + 2)
+
+  out.push(
+    gsap.fromTo(
+      arm,
+      { rotation: -spec.deg },
+      {
+        rotation: spec.deg,
+        duration: spec.period,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+        svgOrigin: `${spec.pivot[0]} ${spec.pivot[1]}`,
+      },
+    ),
+  )
+}
+
 /* ── wiring ──────────────────────────────────────────────────────────────── */
 
 /**
@@ -307,21 +447,65 @@ export function animateGround(root: HTMLElement): () => void {
 
   const onReady = () => {
     const player = root.querySelector<SVGSVGElement>('.ground__player svg')
-    if (player) ctx.add(() => spinBalls(player, character, tweens))
+    if (player)
+      ctx.add(() => {
+        spinBalls(player, character, tweens)
+        swingArm(player, character, tweens)
+      })
   }
   root.addEventListener('svgready', onReady)
   onReady() // in case it landed before this ran
 
-  // Nothing turns while the section is off screen.
+  /**
+   * Nothing turns unless the section is on screen AND this is the character on
+   * show.
+   *
+   * The deck stacks all four collages in one grid cell, and each of them wires
+   * itself, so asking only whether the SECTION is visible had all four running
+   * at once: about a hundred and fifty SVG attributes rewritten every frame,
+   * three quarters of them for collages sitting at `opacity: 0`. It is the
+   * heaviest per-frame work on the page and most of it was for nobody.
+   *
+   * The one on its way out keeps turning until its fade has finished — a still
+   * frame sliding to transparent reads as a hitch, and the fade is the only
+   * moment a paused collage is still on screen. `.ground__slide`'s own 700ms,
+   * so the two stay in step if that is ever retimed.
+   */
+  const FADE = 700
+  const slide = root.closest('.ground__slide')
+  let onScreen = false
+  let hold = 0
+
+  const sync = () => {
+    clearTimeout(hold)
+    if (onScreen && (!slide || slide.hasAttribute('data-on'))) {
+      tweens.forEach((t) => t.play())
+    } else {
+      hold = window.setTimeout(() => tweens.forEach((t) => t.pause()), FADE)
+    }
+  }
+
+  // Tweens are pushed as the artwork lands, so the gate is re-applied then too
+  // — a tween created while this collage is off show would otherwise play.
+  root.addEventListener('svgready', sync)
+
+  const turn = slide ? new MutationObserver(sync) : null
+  if (slide) turn!.observe(slide, { attributeFilter: ['data-on'] })
+
   const st = ScrollTrigger.create({
     trigger: root,
     start: 'top bottom',
     end: 'bottom top',
-    onToggle: (self) =>
-      tweens.forEach((t) => (self.isActive ? t.play() : t.pause())),
+    onToggle: (self) => {
+      onScreen = self.isActive
+      sync()
+    },
   })
 
   return () => {
+    clearTimeout(hold)
+    turn?.disconnect()
+    root.removeEventListener('svgready', sync)
     root.removeEventListener('svgready', onReady)
     st.kill()
     ctx.revert()

@@ -24,10 +24,17 @@ gsap.registerPlugin(CSSPlugin, ScrollTrigger)
  * never write the same property.
  *
  * `ball` lists the path indices that make up the ball — the rest of the file is
- * flame. Football and cricket ball fall on a group boundary; shuttlecock and
- * tennis ball do not, because the trace put the ball's seam in the same colour
- * group as the flame, so those are spelled out. Verified by isolating each set
- * in the browser and looking at it.
+ * flame. Only the cricket ball falls on a colour-group boundary. On the other
+ * three the trace put ball and flame in the SAME group, because the ball's own
+ * markings are drawn in the flame's colour: the football's seams are the pink
+ * of its flame, the shuttlecock's skirt the orange of its own, the tennis
+ * ball's seam the yellow of its. A group is therefore not a set, and every
+ * range here was read off the artwork path by path rather than taken from one.
+ *
+ * Verified by isolating each index in the browser and looking at it — which is
+ * the only way to get these right, and the way the two that were wrong were
+ * found: the football was spinning its body out from under its own seams, and
+ * the shuttlecock was carrying a lick of flame round with it.
  */
 type PropSpec = {
   ball: number[]
@@ -43,9 +50,23 @@ const r = (a: number, b: number) =>
   Array.from({ length: b - a + 1 }, (_, i) => a + i)
 
 export const PROPS: Record<string, PropSpec> = {
-  football: { ball: r(0, 8), spin: 13, drift: -70, flicker: false },
+  /**
+   * 0-8 is the cream body; 9-13 are the pink panel seams drawn ON it, and they
+   * are the ball as much as the body is. They used to be left with the flame —
+   * the whole pink group was — so the body turned and the seams stayed put, and
+   * the ball read as two things sliding over each other. 14-15 are the pink
+   * flame that group also holds, and those do stay.
+   */
+  football: { ball: r(0, 13), spin: 13, drift: -70, flicker: false },
   cricketball: { ball: r(0, 8), spin: -9.5, drift: 52, flicker: false },
-  shuttle: { ball: r(11, 22), spin: 17, drift: -44, flicker: false },
+  /**
+   * 11-21 is skirt and cork. 22 is a lick of flame that happens to be drawn
+   * with them, and including it did two things: it dragged that flame round in
+   * a circle, and — because the pivot is the set's own centre — it pulled the
+   * pivot off the shuttlecock and out toward the flame, so the shuttle orbited
+   * a point beside itself instead of turning on the spot.
+   */
+  shuttle: { ball: r(11, 21), spin: 17, drift: -44, flicker: false },
   tennisball: { ball: [2, 3, 4, 13, 14], spin: -11, drift: 64, flicker: false },
   /**
    * The hero's crossing ball — its own artwork (Figma 199-156312), not the

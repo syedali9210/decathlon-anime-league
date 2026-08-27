@@ -84,14 +84,22 @@ export function Cursor() {
       const toX = gsap.quickTo(el, 'x', { duration: 0.16, ease: 'power3' })
       const toY = gsap.quickTo(el, 'y', { duration: 0.16, ease: 'power3' })
 
+      // What the pointer was last over. `closest` walks to the root against a
+      // six-part selector list, and this runs on every pointermove — which on a
+      // high-polling mouse is hundreds of tree walks a second, on the same
+      // thread as the scroll. The answer can only change when the target does,
+      // and moving WITHIN one element is the overwhelming case.
+      let over: EventTarget | null = null
+
       const move = (e: PointerEvent) => {
         toX(e.clientX)
         toY(e.clientY)
         el.toggleAttribute('data-on', true)
-        const t = e.target
+        if (e.target === over) return
+        over = e.target
         el.toggleAttribute(
           'data-hot',
-          t instanceof Element && !!t.closest(HOT),
+          e.target instanceof Element && !!e.target.closest(HOT),
         )
       }
 
@@ -124,7 +132,12 @@ export function Cursor() {
         })
       }
 
-      const leave = () => el.toggleAttribute('data-on', false)
+      // Dropped with the pointer, so the next entry re-tests rather than
+      // trusting a node that may since have left the document.
+      const leave = () => {
+        over = null
+        el.toggleAttribute('data-on', false)
+      }
 
       window.addEventListener('pointermove', move, { passive: true })
       window.addEventListener('pointerdown', down, { passive: true })

@@ -268,6 +268,29 @@ body::-webkit-scrollbar {
   will-change: transform;
 }
 
+/* Inheritance stops here.
+   --mx, --my and --sy are written on .hero on every pointer frame and every
+   scroll frame, and --exit, --swell and --ball are derived from them there. All
+   six are registered `inherits: true`, so each change makes the computed value
+   of every descendant stale — and below this line are the traced layers, just
+   under two thousand <path> nodes of inlined artwork, none of which reads any
+   of them. The consumers are four elements: .hero, .hero__stage, .layer and
+   .hero__ball, all of them ABOVE this boundary.
+   Redeclaring the six at each artwork root makes the subtree's value its own
+   rather than the hero's, so the invalidation ends here instead of walking the
+   scene twice a frame. The values are arbitrary: nothing under here reads them.
+   Anything inside the artwork that ever needs the pointer or the scroll must
+   take it from a differently-named property, or this boundary has to move. */
+.layer > svg,
+.hero__ball > svg {
+  --mx: 0;
+  --my: 0;
+  --sy: 0;
+  --exit: 0;
+  --swell: 0;
+  --ball: 0;
+}
+
 .hero__ball svg {
   display: block;
   width: 100%;
@@ -1501,22 +1524,33 @@ body::-webkit-scrollbar {
   --ground-phase: -2.1s;
   --ground-lift: -0.45cqw;
 }
+/* The athlete gets a third of a trinket's swing: the arm is what actually moves
+   on these boards -- see groundMotion.ts -- and a figure rocking as hard as the
+   odds and ends around it reads as the whole collage sliding. The sun takes
+   none: it is the backdrop, and a turning half-disc is a wheel. */
 .ground__player {
   --ground-float: 4.7s;
   --ground-phase: -0.8s;
   --ground-lift: -0.9cqw;
+  --ground-swing: 0.3deg;
 }
 
 /* Both ends spelled out, and the tilt carried through both: an implicit `from`
    would take the element's own transform, which already has the lift in it. The
    translate is listed first so it is applied last, in the frame's own upright
-   space rather than in whatever the piece is tilted to. */
+   space rather than in whatever the piece is tilted to.
+   The far end adds a swing to the tilt the piece already carries -- a degree or
+   less, spread and signed per piece by `bob()` in Ground.tsx, so the collage
+   rocks rather than rising and falling as a slab. It turns about `--origin`,
+   the same point the tilt does, which is what keeps a piece hung off one corner
+   swinging from that corner. */
 @keyframes ground-float {
   from {
     transform: translateY(0) rotate(var(--r, 0deg));
   }
   to {
-    transform: translateY(var(--ground-lift, -0.8cqw)) rotate(var(--r, 0deg));
+    transform: translateY(var(--ground-lift, -0.8cqw))
+      rotate(calc(var(--r, 0deg) + var(--ground-swing, 0deg)));
   }
 }
 
@@ -1600,7 +1634,11 @@ body::-webkit-scrollbar {
 .lineup__panel {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 620ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* 620ms here read as a drag on a panel the reader opens to get at the copy.
+     460 is still the full drawer band and still reads as the panel unfolding,
+     but the content is legible a fifth of a second sooner. The row's own fade
+     below waits 120ms and takes 320, so it still lands with the unfold. */
+  transition: grid-template-rows 460ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .lineup__item[data-open] .lineup__panel {

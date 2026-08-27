@@ -547,11 +547,17 @@ function DeckNav({ row }: { row: React.RefObject<HTMLUListElement | null> }) {
     const el = row.current;
     if (!el) return;
     // A pixel of slack: scrollLeft is fractional once the snap has landed.
-    const read = () =>
-      setAt({
-        start: el.scrollLeft <= 1,
-        end: el.scrollLeft >= el.scrollWidth - el.clientWidth - 1,
-      });
+    // Returns the SAME object when neither end has changed, which is React's
+    // signal to skip the render. Handing back a fresh one every time re-rendered
+    // the nav on every scroll event of a drag — dozens a second, to set two
+    // booleans to the values they already held.
+    const read = () => {
+      const start = el.scrollLeft <= 1;
+      const end = el.scrollLeft >= el.scrollWidth - el.clientWidth - 1;
+      setAt((prev) =>
+        prev.start === start && prev.end === end ? prev : { start, end },
+      );
+    };
     read();
     el.addEventListener("scroll", read, { passive: true });
     window.addEventListener("resize", read);

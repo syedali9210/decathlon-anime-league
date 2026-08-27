@@ -173,12 +173,18 @@ const SUN_SVG = namespaceIds(sun, 'sun-')
  * The idle bob, spread so no two pieces breathe together: five periods, four
  * phases and three amplitudes, none of which line up. Enough that a collage of
  * eight never reads as one mass, and cheaper than a hand-picked triple each.
+ *
+ * The swing rides on the same period, alternating sign so neighbours lean apart
+ * rather than together. Under a degree, because these are pieces PINNED to a
+ * board: enough to take the stillness off, not enough to read as anything
+ * turning.
  */
 const bob = (i: number) =>
   ({
     '--ground-float': `${3.4 + (i % 5) * 0.7}s`,
     '--ground-phase': `${-0.4 - (i % 4) * 0.8}s`,
     '--ground-lift': `${-0.6 - (i % 3) * 0.2}cqw`,
+    '--ground-swing': `${(i % 2 ? -1 : 1) * (0.55 + (i % 3) * 0.2)}deg`,
   }) as React.CSSProperties
 
 const place = (t: Trinket, i: number) =>
