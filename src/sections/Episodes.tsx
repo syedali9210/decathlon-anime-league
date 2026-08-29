@@ -162,7 +162,10 @@ const INTRO_SPAN = 0.66;
 // the last frame of the intro, and any gap between the two would show the deck
 // sitting undealt.
 const DEAL_AT = INTRO_SPAN;
-const DEAL_SPAN = 0.26;
+// Widened with the runway's trim: the deal was getting 0.26 of a 460svh pinned
+// window and now gets 0.27 of a 390svh one, so it loses about as much scroll as
+// the section as a whole does rather than taking the cut twice over.
+const DEAL_SPAN = 0.27;
 
 /**
  * The section announces itself before it shows anything, and it does it one line
@@ -230,7 +233,11 @@ function useIntroSequence(
           trigger: runway,
           start: "top top",
           end: () => "+=" + pinned() * INTRO_SPAN,
-          scrub: 0.6,
+          // A second and a bit of catch-up rather than half of one. Scrub is
+          // not the sequence's speed — the scroll range is — but it is what
+          // makes it read as gliding to the scroll position instead of being
+          // dragged frame by frame, which is most of what "too quick" was.
+          scrub: 1.15,
           invalidateOnRefresh: true,
         },
       });
@@ -261,46 +268,53 @@ function useIntroSequence(
         .fromTo(
           lead,
           { autoAlpha: 0, scale: 3.2, y: () => -window.innerHeight * 0.5 },
-          { autoAlpha: 1, scale: 1, y: 0, duration: 1.5, ease: "power3.out" },
+          { autoAlpha: 1, scale: 1, y: 0, duration: 2.2, ease: "power3.out" },
           0,
         )
         // Held at rest long enough to be read before it goes.
         .to(
           lead,
-          { autoAlpha: 0, y: -90, duration: 0.6, ease: "power2.in" },
-          2.6,
+          { autoAlpha: 0, y: -90, duration: 0.75, ease: "power2.in" },
+          3.5,
         );
 
       // Each claim rises into the middle, holds, and leaves upward — so the
       // whole relay travels one way and reads as a single move rather than
       // four separate entrances.
-      const FIRST = 3.5;
-      const EVERY = 1.4;
+      // Every move here is about half again as long as it was, and the cadence
+      // has opened up with them so they still get a beat at rest in the middle
+      // rather than turning over the moment they arrive. Longer moves inside a
+      // slightly shorter window is the whole of the change: each claim takes
+      // more of the sequence than it used to, the sequence takes less scroll.
+      const FIRST = 4.4;
+      const EVERY = 1.7;
       claims.forEach((c, i) => {
         const at = FIRST + i * EVERY;
         tl.fromTo(
           c,
           { autoAlpha: 0, y: 60 },
-          { autoAlpha: 1, y: 0, duration: 0.45, ease: "back.out(1.7)" },
+          // `back.out(1.1)` rather than 1.7: the overshoot is what made these
+          // snap. Enough of it left to still land with some weight.
+          { autoAlpha: 1, y: 0, duration: 0.65, ease: "back.out(1.1)" },
           at,
         ).to(
           c,
-          { autoAlpha: 0, y: -60, duration: 0.4, ease: "power2.in" },
-          at + 0.72,
+          { autoAlpha: 0, y: -60, duration: 0.55, ease: "power2.in" },
+          at + 0.95,
         );
       });
 
       // Everything the relay was standing in for, arriving at once and rising
       // into place — which is what clears the room the deck needs.
-      const settle = FIRST + claims.length * EVERY + 0.5;
+      const settle = FIRST + claims.length * EVERY + 0.55;
       tl.to(
         group,
-        { opacity: 1, y: 0, duration: 1.1, ease: "power2.out" },
+        { opacity: 1, y: 0, duration: 1.2, ease: "power2.out" },
         settle,
       )
         // Handed over on the intro's last frame, which is the frame the deal
         // starts on.
-        .set(row, { autoAlpha: 1 }, settle + 1.1);
+        .set(row, { autoAlpha: 1 }, settle + 1.2);
     }, el);
 
     return () => ctx.revert();
@@ -715,10 +729,10 @@ export function Episodes() {
                   "dealt and still" flag — because a row of buttons sitting in
                   their final places while the cards are still flying in reads
                   as a broken layout rather than a deliberate one.
-                  The name is for assistive tech: five links all called "Shop"
-                  are a list of nothing. */}
+                  The name is for assistive tech: five links all called
+                  "Explore" are a list of nothing. */}
               <a className="ecard__shop" href={`#tee-${ep.id}`}>
-                Shop<span className="sr-only"> {ep.title}</span>
+                Explore<span className="sr-only"> {ep.title}</span>
               </a>
             </li>
           ))}

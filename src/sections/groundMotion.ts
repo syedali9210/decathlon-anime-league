@@ -207,34 +207,48 @@ function runFloor(svg: SVGSVGElement, out: gsap.core.Tween[]) {
   return () => spare.remove()
 }
 
-/* ── the disc's rim ──────────────────────────────────────────────────────── */
+/* ── the hatch marks ─────────────────────────────────────────────────────── */
 
-/** Seconds for a mark to travel one place along the rim. */
-const RIM_STEP = 0.28
+/**
+ * Seconds for a mark to travel one place, per piece.
+ *
+ * The football board's green half-disc carries eighteen short white marks
+ * hatched across the black band on its lower-right edge (Figma 282-7416,
+ * `Line 35` and up); the cricket board's bolt carries nine of them across its
+ * own shadow band, down the long diagonal. Both are the same drawing trick and
+ * both chase the same way — the bolt the slower of the two: nine marks over a
+ * short diagonal cover the run far faster than eighteen do around the disc's
+ * arc, so the same step per place is not the same speed on screen.
+ *
+ * Any piece named here is inlined rather than drawn behind an <img>; see
+ * `Trinket.svg` in Ground.tsx. Nothing happens for a board that has no piece by
+ * that name, which is how the badminton board's bolt — one flat shape, no marks
+ * — is left alone.
+ */
+const HATCH: Record<string, number> = { disc: 0.28, bolt: 0.5 }
 
 type Point = { x: number; y: number }
 
 /**
- * The green half-disc at the foot of the collage carries eighteen short white
- * marks hatched across the black band on its lower-right edge — Figma 282-7416,
- * `Line 35` and up. They chase each other around the rim, top right to bottom
- * left, each stepping into the place the next one holds.
+ * The marks chase each other along the band they are hatched across, each
+ * stepping into the place the next one holds.
  *
- * Translated, not turned about the disc's centre: the marks all sit at roughly
- * the same angle wherever they are on the curve rather than standing radially
- * off it, so rotating them would stand them up as they travelled.
+ * Translated, not turned about any centre: the marks sit at roughly the same
+ * angle wherever they are on the run rather than standing off it radially, so
+ * rotating them would stand them up as they travelled.
  *
- * Ordered by their y, which along this arc is the rim order — the curve only
- * ever descends from the first mark to the last, so no centre is needed to sort
- * them and none is hard-coded.
+ * Ordered by their y, which on both of these is the travel order — the disc's
+ * arc and the bolt's diagonal only ever descend from the first mark to the
+ * last, so no centre is needed to sort them and none is hard-coded.
  *
  * The fades at either end belong to the PLACES, not to the marks: whichever
  * element is arriving at the first place fades in, whichever is leaving the last
  * fades out. Tie a fade to a particular mark instead and the cycle blinks every
  * time it restarts.
  */
-function runRimTicks(svg: SVGSVGElement, out: gsap.core.Tween[]) {
-  // The sector is filled, not stroked, so the marks are the only stroked paths.
+function runHatchMarks(svg: SVGSVGElement, out: gsap.core.Tween[], step: number) {
+  // Disc and bolt alike are filled, not stroked, so the marks are the only
+  // stroked paths in either drawing.
   const marks = [...svg.querySelectorAll<SVGPathElement>('path[stroke]')].sort(
     (a, b) => a.getBBox().y - b.getBBox().y,
   )
@@ -269,7 +283,7 @@ function runRimTicks(svg: SVGSVGElement, out: gsap.core.Tween[]) {
         x: slots[i + 1].x - base.x,
         y: slots[i + 1].y - base.y,
         opacity: i + 1 === last ? 0 : 1,
-        duration: RIM_STEP,
+        duration: step,
         ease: 'none',
         repeat: -1,
       },
@@ -439,10 +453,12 @@ export function animateGround(root: HTMLElement): () => void {
     const pitch = root.querySelector<SVGSVGElement>('.ground__pitch svg')
     if (pitch) drop.push(runFloor(pitch, tweens))
 
-    const disc = root.querySelector<SVGSVGElement>(
-      '.ground__trinket[data-trinket="disc"] svg',
-    )
-    if (disc) drop.push(runRimTicks(disc, tweens))
+    for (const [id, step] of Object.entries(HATCH)) {
+      const piece = root.querySelector<SVGSVGElement>(
+        `.ground__trinket[data-trinket="${id}"] svg`,
+      )
+      if (piece) drop.push(runHatchMarks(piece, tweens, step))
+    }
   }, root)
 
   const onReady = () => {

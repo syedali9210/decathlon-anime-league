@@ -44,6 +44,8 @@
   --c-navy: #0d1d5c;
   /* The medallion centre; the cursor turns this colour over anything clickable. */
   --c-pink: #ff37be;
+  /* The footer board's field. */
+  --c-violet: #b33af4;
 
   /* Breathing room between the viewport edge and the frame. */
   --frame-pad: clamp(12px, 2.4vmin, 32px);
@@ -374,8 +376,11 @@ body::-webkit-scrollbar {
      and only then the deal and its hold. Seven beats before a card is dealt,
      and each of them wants roughly a third of a screen of scroll to itself —
      at 230svh they overlapped into one event, and at 420svh they still went by
-     too fast to read. */
-  height: 560svh;
+     too fast to read.
+     560 was more than the sequence needed once the beats themselves were
+     lengthened: the moves now take a bigger share of the timeline, so each one
+     still gets its scroll out of a shorter window. See Episodes.tsx. */
+  height: 490svh;
   overflow: clip;
   background:
     linear-gradient(180deg, #000 0%, rgb(120 81 174 / 0.5) 100%),
@@ -491,7 +496,7 @@ body::-webkit-scrollbar {
    nothing on it. The intro still plays; it just gets most of the window. */
 @media (max-width: 640px) {
   .episodes-runway {
-    height: 340svh;
+    height: 300svh;
   }
 }
 
@@ -1254,6 +1259,10 @@ body::-webkit-scrollbar {
 }
 
 .ground__title {
+  /* Down the whole left-hand side, so the right column can stack the collage
+     and the copy under it without the claim's height getting between them. */
+  grid-column: 1;
+  grid-row: 1 / span 2;
   margin: 0;
   font-family: 'Roboto Flex', system-ui, sans-serif;
   /* 700, not the 800 every other headline on the site uses: the board's own
@@ -1285,6 +1294,8 @@ body::-webkit-scrollbar {
    frame sits 15px lower than the claim on the board; a percentage margin
    resolves against the inline size, so this is 15 of 1388. */
 .ground__deck {
+  grid-column: 2;
+  grid-row: 1;
   display: grid;
   margin-top: 1.08%;
 }
@@ -1503,6 +1514,44 @@ body::-webkit-scrollbar {
   background: #000;
 }
 
+/* The bolt's hatch marks came out of Figma at pure #fff, which is the hardest
+   value anywhere on this board — the artwork around them is all tinted, the
+   bat and gloves included. The board's own cream sits them in that palette
+   without dimming them into the shadow band they are drawn on.
+   Reachable at all only because the bolt is inlined rather than an <img>; as a
+   closed box its colours were whatever the file said. */
+.ground__trinket[data-trinket="bolt"] svg path[stroke] {
+  stroke: #f2e6b5;
+}
+
+/* The campaign copy, under the collage rather than beside the claim: the claim
+   is the board's headline and this explains it, so it belongs with the pictures
+   it is describing rather than stacked under ten lines of display type.
+
+   Column two, which is what puts it under the collage and leaves the claim's
+   stack alone. A measure cap rather than the column's full width -- 976px would
+   run this to about 120 characters a line, roughly twice what anyone reads
+   comfortably. Sized in cqw like everything else in here, so it tracks the
+   frame rather than the window. */
+.ground__copy {
+  grid-column: 2;
+  /* Row two of a two-row grid, with the claim spanning both — see
+     `.ground__title`. Auto-placed it landed in row two anyway, but the row's
+     height came from whichever COLUMN was taller, and that is the claim's
+     ten-line stack: the copy sat two hundred pixels below the collage it is
+     written about, with nothing in between. */
+  grid-row: 2;
+  max-width: 62ch;
+  margin: clamp(20px, 2.6cqw, 44px) 0 0;
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(13px, 1.35cqw, 19px);
+  line-height: 1.65;
+  /* Black, not the claim's white: this sits at the pale end of the section's
+     gradient, where white copy has almost nothing to hold on to. */
+  color: var(--c-ink);
+}
+
 /* -- idle ----------------------------------------------------------------- */
 
 /* Nothing here is scroll-driven -- the collage is a still. It gets the same
@@ -1571,6 +1620,21 @@ body::-webkit-scrollbar {
   .ground__deck {
     margin-top: 0;
   }
+
+  /* One column here, so the row placement the two-column layout needs has to be
+     undone with it: a claim still spanning two rows and a deck still pinned to
+     the first would sit on top of each other. Auto placement stacks the three
+     in source order, which is the order they read in. */
+  .ground__title,
+  .ground__deck,
+  .ground__copy {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .ground__copy {
+    max-width: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1601,11 +1665,15 @@ body::-webkit-scrollbar {
     180deg,
     #ec9eaf 0%,
     #c52354 clamp(64px, 11vw, 176px),
-    #443a72 66%
+    #443a72 66%,
+    var(--c-violet) 100%
   );
-  /* The trailing space is what gives the stepping room to finish while this is
-     the last section on the page; trim it once something follows. */
-  padding: clamp(64px, 11vw, 176px) var(--gutter) clamp(200px, 55vh, 620px);
+  /* The trailing space is what gives the stepping room to finish. It used to be
+     a whole screen and more, because this was the last section on the page and
+     nothing below it could be scrolled to; the footer now supplies that room,
+     so this is back to what the stepping itself needs and the page no longer
+     ends on 600px of empty violet. */
+  padding: clamp(64px, 11vw, 176px) var(--gutter) clamp(140px, 30vh, 340px);
 }
 
 .lineup__list {
@@ -1650,10 +1718,15 @@ body::-webkit-scrollbar {
   min-height: 0;
 }
 
+/* Three columns for two children: the index at the left, the card in the
+   middle, and an empty track the same width as the first so the card sits dead
+   centre. `space-between` did that job while there was a price on the right —
+   without one it swung the card over to the edge. */
 .lineup__row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
+  justify-items: center;
   gap: clamp(12px, 3vw, 48px);
   max-width: 900px;
   margin: clamp(16px, 2.4vw, 38px) auto;
@@ -1666,7 +1739,7 @@ body::-webkit-scrollbar {
 }
 
 .lineup__index {
-  flex-shrink: 0;
+  justify-self: start;
   font-family: 'Roboto Flex', system-ui, sans-serif;
   font-weight: 600;
   font-size: clamp(10px, 1vw, 16px);
@@ -1678,7 +1751,13 @@ body::-webkit-scrollbar {
    chrome keeps its own 425:723 ratio and the surplus is clipped. */
 .lineup__card {
   position: relative;
-  flex: 0 1 clamp(180px, 26.6vw, 425px);
+  /* A real width, not a flex-basis. The row is a grid now, which ignores
+     `flex` — and with nothing else giving this a size, the card collapsed to
+     its content: every image inside is absolutely positioned, so that is zero,
+     and the aspect ratio then gave it no height either. The open panel came out
+     170px tall instead of ~690. */
+  width: clamp(180px, 26.6vw, 425px);
+  max-width: 100%;
   aspect-ratio: 425 / 676;
   overflow: hidden;
   border-radius: 5.53%/3.48%;
@@ -1702,20 +1781,6 @@ body::-webkit-scrollbar {
   width: 100%;
   height: auto;
   pointer-events: none;
-}
-
-.lineup__price {
-  flex-shrink: 0;
-  font-family: 'Roboto Flex', system-ui, sans-serif;
-  font-weight: 800;
-  font-size: clamp(10px, 0.88vw, 14px);
-  color: #000;
-  background: #ff5ec2;
-  border: 2px solid #000;
-  border-radius: 25px;
-  padding: 0.64em 1.28em;
-  filter: drop-shadow(-2px 2px 0 #000);
-  white-space: nowrap;
 }
 
 /* ── scattered props ─────────────────────────────────────────────────────── */
@@ -2165,5 +2230,410 @@ html[data-custom-cursor] * {
 @media (pointer: coarse) {
   :root {
     --sweep-scroll: 22%;
+  }
+}
+
+/* ── the footer ──────────────────────────────────────────────────────────── */
+
+/* Figma 325-80. The board is 1596x804 and everything on it is placed as a
+   percentage of that, so the whole composition scales as one. Capped at its own
+   width rather than run edge to edge: past 1596 the pieces would simply get
+   bigger, and the rest of the page caps too. */
+.footer {
+  position: relative;
+  background: var(--c-violet);
+  /* Picks up the violet the line-up ends on, so the two meet without a seam. */
+  overflow: clip;
+}
+
+.footer__board {
+  position: relative;
+  width: min(100%, 1596px);
+  margin-inline: auto;
+  aspect-ratio: 1596 / 804;
+  /* Type inside the credit card is sized against the BOARD, not the window, so
+     the card scales with the artwork it belongs to. */
+  container-type: inline-size;
+}
+
+.footer__grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* The file is `preserveAspectRatio="none"` and the board holds the artboard's
+     ratio, so this lands on its own lines either way. */
+  display: block;
+}
+
+/* <picture> is a box around the image, not the image — the two that swap by
+   media query need their <img> told to fill it. */
+.footer__grid img,
+.footer__arch img,
+.footer__plaque img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.footer__arch img,
+.footer__plaque img {
+  /* The two arches are different shapes, so the height follows whichever
+     loaded rather than being pinned by the wrapper. */
+  height: auto;
+}
+
+
+/* One rule for everything pinned to the board. `--x`/`--y` are the piece's
+   CENTRE, not its top-left: half the pieces here are turned, and a rotation
+   about a corner moves the piece as well as turning it. */
+.footer__piece {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  height: auto;
+  translate: -50% -50%;
+  display: block;
+}
+
+/* Placed by their top-left on the board, like the boards elsewhere on the site,
+   so these opt out of the centring above. */
+.footer__line,
+.footer__speck,
+.footer__plaque,
+.footer__emblem,
+.footer__arch,
+.footer__kit,
+.footer__credit {
+  translate: none;
+}
+
+.footer__star {
+  rotate: -30deg;
+}
+
+/* Off the wide board entirely; the portrait one places it inside the emblem.
+   After `.footer__piece`, not before: the two are equally specific and that one
+   sets `display: block`, so order is what decides this. */
+.footer__lockup {
+  display: none;
+}
+
+/* -- the kit ------------------------------------------------------------- */
+
+/* The racket is drawn wider than the box the board gives it and hangs off the
+   left edge, where the board clips it. Its own container, so the two pieces
+   inside can be placed against the box rather than against the board. */
+.footer__kit {
+  aspect-ratio: 119 / 132;
+  overflow: clip;
+  container-type: inline-size;
+}
+
+/* Written as properties because the portrait board sits the same two pieces in
+   the same box at different proportions — a bigger bat against a shorter
+   racket — and that is the whole of the difference between them. */
+.footer__kit {
+  --oval-x: 0%;
+  --oval-y: 0%;
+  --oval-w: 32.65%;
+  --racket-x: 41.84%;
+  --racket-y: 49.92%;
+  --racket-w: 113.35%;
+}
+
+.footer__oval {
+  position: absolute;
+  left: var(--oval-x);
+  top: var(--oval-y);
+  width: var(--oval-w);
+  height: auto;
+  display: block;
+}
+
+.footer__racket {
+  position: absolute;
+  left: var(--racket-x);
+  top: var(--racket-y);
+  width: var(--racket-w);
+  height: auto;
+  translate: -50% -50%;
+  rotate: 165deg;
+  display: block;
+}
+
+/* -- the credit card ------------------------------------------------------ */
+
+/* 162x219 on the board, padded 21/14/8 — the photo takes the space the type
+   does not, which is what `flex: 1` is doing rather than a measured height. */
+/* Its own container, and everything inside it is sized in `cqw` of the CARD.
+   Percentages would have been the obvious choice and are wrong: padding
+   percentages resolve against the containing BLOCK, which here is the board, so
+   `6%` on a 99px card asked for 24px of padding and left 50px of the 87 the
+   copy needed. Card units hold whatever the board is doing. */
+/* The card is the container; the column inside it is what gets padded, and
+   everything in there is measured in `cqw` of the CARD. Percentages would have
+   been the obvious choice and are wrong twice over: padding percentages resolve
+   against the containing BLOCK, which here is the board, so `6%` on a 99px card
+   asked for 24px a side — and that padding then shrank the card's content box,
+   which is what `cqw` is measured from, halving every unit inside it. */
+.footer__credit {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  aspect-ratio: 162 / 219;
+  container-type: inline-size;
+  background: #3114c0;
+}
+
+.footer__credit-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* 12 / 21 / 14 / 8 on the board's 162-wide card. */
+  gap: 7.41cqw;
+  padding: 12.96cqw 8.64cqw 4.94cqw;
+}
+
+.footer__artist {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.footer__names {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* 147 of the card's 162: the lockup is wider than the photo above it and
+     overhangs the card's side padding. The board's own arrangement. */
+  width: 90.74%;
+  align-self: center;
+}
+
+.footer__wordmark {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* The board's own face — see the note on the font link in index.html for why
+   this one is loaded rather than substituted. Sized in card units, so the
+   credit holds its proportions on both boards. 20 of the card's 162. */
+.footer__x,
+.footer__artist-name {
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 12.35cqw;
+  line-height: 0.9672;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  color: #fff;
+}
+
+/* -- tablet and phone ----------------------------------------------------- */
+
+/* Below this the board is too short for its own contents: at 900px wide it is
+   453 tall, which puts the credit card at 91px and its type under 12px. The
+   composition stops being one, so it becomes a wrapped row instead — the emblem
+   on its own line, the window and the kit beside each other under it, then the
+   credit on its own line again.
+
+   The loose decoration goes with the board it was drawn on. The stars, the
+   plaque, the speck and the stray rule are all placed against the wide field,
+   and there is no honest place for them in a column — scattered over a stack
+   they read as debris rather than as sparkle. The ruling stays, because it is
+   the field itself. */
+@media (max-width: 900px) {
+  .footer__board {
+    aspect-ratio: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(24px, 5vw, 48px);
+    padding: clamp(48px, 9vw, 88px) var(--gutter);
+  }
+
+  /* The ruling is the field these sit on, so it covers whatever height the
+     column comes out at rather than stretching to it. */
+  .footer__grid {
+    object-fit: cover;
+  }
+
+  .footer__line,
+  .footer__speck,
+  .footer__plaque,
+  .footer__star {
+    display: none;
+  }
+
+  /* Back into the flow. The kit keeps its own positioning context — the racket
+     and the oval inside it are placed against IT, and left static they resolve
+     against the board instead and blow up to its width. */
+  .footer__emblem,
+  .footer__arch,
+  .footer__kit,
+  .footer__credit {
+    position: relative;
+    left: auto;
+    top: auto;
+    translate: none;
+  }
+
+  /* Own line, centred: `flex-basis: 100%` breaks the row, `max-width` keeps the
+     artwork its own size, and the auto margins put it in the middle. */
+  .footer__emblem,
+  .footer__credit {
+    flex: 0 0 100%;
+    margin-inline: auto;
+  }
+
+  .footer__emblem {
+    max-width: min(52%, 300px);
+  }
+
+  .footer__credit {
+    max-width: min(42%, 210px);
+  }
+
+  /* These two share the line between them. */
+  .footer__arch {
+    flex: 0 0 auto;
+    width: min(24%, 150px);
+  }
+
+  .footer__kit {
+    flex: 0 0 auto;
+    width: min(20%, 120px);
+  }
+
+}
+
+/* -- the portrait board --------------------------------------------------- */
+
+/* Figma 328-404. Not the wide board rearranged: its own 402x860 artboard, with
+   its own ruling, its own crop of it, and a shorter arch with nobody in it.
+   Everything below is that board's own numbers, read the same way as the wide
+   one's — percentages of 402 across and 860 down.
+   The two boards' pieces sit at completely different places, so this overrides
+   `left`/`top`/`width` outright rather than the `--x`/`--y` the wide board sets
+   inline. It comes after `.footer__piece` in the file, which is what lets an
+   equally specific rule win. */
+@media (max-width: 560px) {
+  .footer__board {
+    aspect-ratio: 402 / 860;
+    display: block;
+    padding: 0;
+    gap: 0;
+  }
+
+  /* Ruled wider than the board and hung off its left edge — the portrait board
+     shows a crop of a larger grid, not a grid fitted to it. */
+  .footer__grid {
+    inset: auto;
+    left: -73.88%;
+    top: -1.63%;
+    width: 255.97%;
+    height: 101.63%;
+  }
+
+  .footer__grid img {
+    object-fit: fill;
+  }
+
+  .footer__emblem,
+  .footer__lockup,
+  .footer__arch,
+  .footer__kit,
+  .footer__credit,
+  .footer__plaque {
+    display: block;
+    position: absolute;
+    flex: none;
+    max-width: none;
+    margin-inline: 0;
+    translate: none;
+  }
+
+  .footer__plaque {
+    left: 11.44%;
+    top: 5.58%;
+    width: 24.63%;
+  }
+
+  .footer__kit {
+    left: 70.65%;
+    top: 17.21%;
+    width: 13.68%;
+    aspect-ratio: 55 / 84;
+    /* Same two pieces, sat differently: the bat takes more of the box and the
+       racket less of it than on the wide board. */
+    --oval-x: 1.8%;
+    --oval-y: 3.6%;
+    --oval-w: 43.5%;
+    --racket-x: 34%;
+    --racket-y: 51.4%;
+    --racket-w: 101.3%;
+  }
+
+  .footer__emblem {
+    left: 20.15%;
+    top: 30.47%;
+    width: 59.48%;
+  }
+
+  /* Inside the emblem, under the league's own name. */
+  .footer__lockup {
+    left: 31.59%;
+    top: 50.81%;
+    width: 36.05%;
+  }
+
+  /* 12 / 14 / 6 / 8 on the portrait board's 99-wide card — a taller, narrower
+     card, padded tighter at the sides and looser at the foot. */
+  .footer__credit {
+    left: 11.44%;
+    top: 71.51%;
+    width: 24.63%;
+    aspect-ratio: 99 / 188;
+  }
+
+  .footer__credit-inner {
+    gap: 12.12cqw;
+    padding: 14.14cqw 6.06cqw 8.08cqw;
+  }
+
+  .footer__arch {
+    left: 63.43%;
+    top: 71.74%;
+    width: 25.87%;
+  }
+
+  /* The card is a third of the width it has on the wide board, so the lockup
+     takes the full inside of it and the two lines are set apart rather than
+     together — 20 over 12 on a 402 board, against 20 over 20 on a 1596 one. */
+  .footer__names {
+    width: 100%;
+  }
+
+  .footer__wordmark {
+    width: 84%;
+  }
+
+  /* The board sets the two lines apart here — 20 over 12 on its 99-wide card,
+     against 20 over 20 on the wide board's 162. */
+  .footer__x {
+    font-size: 20.2cqw;
+  }
+
+  .footer__artist-name {
+    font-size: 12.12cqw;
   }
 }

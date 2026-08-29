@@ -16,7 +16,7 @@ import crickPlayer from '../assets/ground/crick-stryke/player.svg'
 import crickBall from '../assets/ground/crick-stryke/ball.svg'
 import crickSpark from '../assets/ground/crick-stryke/spark.svg'
 import crickHelmet from '../assets/ground/crick-stryke/helmet.webp'
-import crickBolt from '../assets/ground/crick-stryke/bolt.svg'
+import crickBolt from '../assets/ground/crick-stryke/bolt.svg?raw'
 import crickCrescent from '../assets/ground/crick-stryke/crescent.svg'
 
 import spinPlayer from '../assets/ground/spin-ignite/player.svg'
@@ -50,6 +50,17 @@ import { animateGround } from './groundMotion'
  * (524, 232) and size it 976x918, which is what makes that a swap rather than
  * four screens.
  */
+/**
+ * The campaign's own words. Real copy, not artwork — it is the only prose in
+ * this section, so it is a plain paragraph and stays in the accessibility tree.
+ */
+const COPY =
+  'Anime and sports share the same beating heart: the thrilling journey of ' +
+  'pushing past your limits to unleash an unbelievable, game-changing power. ' +
+  'We bring that shonen energy to the field, because every athlete is the main ' +
+  'character of their own story, and every match is your chance to pull off ' +
+  'the impossible.'
+
 const CLAIM = [
   'From the',
   'First step',
@@ -71,8 +82,18 @@ const CLAIM = [
  */
 type Trinket = {
   id: string
-  /** Omitted for the one piece a board draws as a plain black bar. */
+  /**
+   * Omitted for the pieces with no artwork behind an <img>: the one a board
+   * draws as a plain black bar, and the ones inlined below.
+   */
   src?: string
+  /**
+   * Artwork put in the DOM instead of behind an <img>, for a piece something
+   * inside of which moves — the football board's disc and the cricket board's
+   * bolt both carry hatch marks that chase along them. Namespaced at the point
+   * of use, like every other inlined export here.
+   */
+  svg?: string
   x: number
   y: number
   w: number
@@ -94,8 +115,6 @@ type Character = {
   /** The board's sticker. Its colour and tilt are in the stylesheet. */
   word: string
   trinkets?: Trinket[]
-  /** Inlined because something inside it moves. */
-  inlineTrinket?: Trinket & { svg: string }
 }
 
 const CHARACTERS: Character[] = [
@@ -105,13 +124,9 @@ const CHARACTERS: Character[] = [
     alt: 'The Apex-Kick tee worn on a football pitch, ball under one arm',
     player: apexPlayer,
     word: 'Goal',
-    inlineTrinket: {
-      id: 'disc',
-      svg: namespaceIds(apexDisc, 'disc-'),
-      x: 22.53,
-      y: 82.96,
-      w: 16.69,
-    },
+    trinkets: [
+      { id: 'disc', svg: namespaceIds(apexDisc, 'disc-'), x: 22.53, y: 82.96, w: 16.69 },
+    ],
   },
   {
     id: 'sky-smash',
@@ -136,7 +151,7 @@ const CHARACTERS: Character[] = [
       { id: 'ball', src: crickBall, x: 53.04, y: 8.89, w: 3.39, r: -80.71, origin: '43.87% 43.92%' },
       { id: 'spark', src: crickSpark, x: 52.17, y: 7.4, w: 3.33, r: -80.71 },
       { id: 'helmet', src: crickHelmet, x: 0.15, y: 26.7, w: 14.06, r: -50.13 },
-      { id: 'bolt', src: crickBolt, x: -1.84, y: 48.81, w: 19.89, r: 9.08, origin: '50% 46.93%' },
+      { id: 'bolt', svg: namespaceIds(crickBolt, 'bolt-'), x: -1.84, y: 48.81, w: 19.89, r: 9.08, origin: '50% 46.93%' },
       { id: 'crescent', src: crickCrescent, x: 13.14, y: 2.53, w: 13.1, r: -15.08, origin: '39.81% 0%' },
     ],
   },
@@ -263,6 +278,29 @@ function usePlayer(host: React.RefObject<HTMLDivElement | null>, src: string, id
 }
 
 /**
+ * A trinket whose artwork is in the DOM rather than behind an <img>.
+ *
+ * Its own component so each one owns its host — there is more than one of these
+ * across the four boards now, and a single ref on the collage could only ever
+ * reach the first. The effect that fills it is the same `useInlineSvg` the
+ * pitch and sun use, and for the same reason: React must never own this markup.
+ */
+function InlineTrinket({ t, i }: { t: Trinket; i: number }) {
+  const host = useRef<HTMLDivElement>(null)
+  useInlineSvg(host, t.svg ?? '')
+
+  return (
+    <div
+      className="ground__trinket"
+      data-trinket={t.id}
+      style={place(t, i)}
+      aria-hidden="true"
+      ref={host}
+    />
+  )
+}
+
+/**
  * One character's collage.
  *
  * Order is the boards' own paint order: the odds and ends marked `back` go
@@ -275,11 +313,9 @@ function Collage({ character }: { character: Character }) {
   const playerHost = useRef<HTMLDivElement>(null)
   const pitchHost = useRef<HTMLDivElement>(null)
   const sunHost = useRef<HTMLDivElement>(null)
-  const trinketHost = useRef<HTMLDivElement>(null)
 
   useInlineSvg(pitchHost, PITCH_SVG)
   useInlineSvg(sunHost, SUN_SVG)
-  useInlineSvg(trinketHost, character.inlineTrinket?.svg ?? '')
   usePlayer(playerHost, character.player, character.id)
 
   // After the four hooks above, so the artwork is in the DOM to be wired.
@@ -287,7 +323,9 @@ function Collage({ character }: { character: Character }) {
 
   const trinkets = character.trinkets ?? []
   const draw = (t: Trinket, i: number) =>
-    t.src ? (
+    t.svg ? (
+      <InlineTrinket key={t.id} t={t} i={i} />
+    ) : t.src ? (
       <img
         key={t.id}
         className="ground__trinket"
@@ -326,15 +364,6 @@ function Collage({ character }: { character: Character }) {
         {character.word}
       </p>
       {trinkets.map((t, i) => (t.back ? null : draw(t, i)))}
-      {character.inlineTrinket && (
-        <div
-          className="ground__trinket"
-          data-trinket={character.inlineTrinket.id}
-          style={place(character.inlineTrinket, 0)}
-          aria-hidden="true"
-          ref={trinketHost}
-        />
-      )}
     </div>
   )
 }
@@ -406,6 +435,8 @@ export function Ground() {
             </div>
           ))}
         </div>
+
+        <p className="ground__copy">{COPY}</p>
       </div>
     </section>
   )

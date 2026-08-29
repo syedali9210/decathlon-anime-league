@@ -21,17 +21,24 @@ import { animateProp } from './propMotion'
 
 /**
  * The Figma cards all carry the same placeholder copy — "CRICK - STRYKE BLACK"
- * six times — while the photography clearly shows six different tees. The names
- * here follow the garment in each shot; swap this array for the real catalogue
- * when there is one.
+ * six times — while the photography clearly shows six different garments. The
+ * names here follow what is in each shot; swap this array for the real
+ * catalogue when there is one.
+ *
+ * Five tees and the cap. The fifth shot is the cap's, not a second Spin-Ignite
+ * tee: both people in it are wearing the cap, the man is adjusting his into
+ * the camera, and the tee behind is the one card four already sells.
  */
+const TEE = 899
+const CAP = 799
+
 const PRODUCTS = [
-  { id: 'crick-stryke', name: 'Crick-Stryke', photo: crickStryke, small: crickStrykeSm, width: 364, sport: 'cricket' },
-  { id: 'apex-kick', name: 'Apex-Kick', photo: apexKick, small: apexKickSm, width: 480, sport: 'football' },
-  { id: 'sky-smash', name: 'Sky-Smash', photo: skySmash, small: skySmashSm, width: 480, sport: 'badminton' },
-  { id: 'spin-ignite', name: 'Spin-Ignite', photo: spinIgnite, small: spinIgniteSm, width: 480, sport: 'tennis' },
-  { id: 'league-tee', name: 'Spin-Ignite', photo: leagueTee, small: leagueTeeSm, width: 480, sport: 'tennis' },
-  { id: 'rim-crush', name: 'Rim-Crush', photo: rimCrush, small: rimCrushSm, width: 480, sport: 'basketball' },
+  { id: 'crick-stryke', name: 'Crick-Stryke', photo: crickStryke, small: crickStrykeSm, width: 364, sport: 'cricket', kind: 'tee', price: TEE },
+  { id: 'apex-kick', name: 'Apex-Kick', photo: apexKick, small: apexKickSm, width: 480, sport: 'football', kind: 'tee', price: TEE },
+  { id: 'sky-smash', name: 'Sky-Smash', photo: skySmash, small: skySmashSm, width: 480, sport: 'badminton', kind: 'tee', price: TEE },
+  { id: 'spin-ignite', name: 'Spin-Ignite', photo: spinIgnite, small: spinIgniteSm, width: 480, sport: 'tennis', kind: 'tee', price: TEE },
+  { id: 'league-cap', name: 'Cap', photo: leagueTee, small: leagueTeeSm, width: 480, sport: 'basketball', kind: 'cap', price: CAP },
+  { id: 'rim-crush', name: 'Rim-Crush', photo: rimCrush, small: rimCrushSm, width: 480, sport: 'basketball', kind: 'tee', price: TEE },
 ]
 
 /**
@@ -105,7 +112,7 @@ export function Products() {
                 src={p.photo}
                 srcSet={`${p.small} 320w, ${p.photo} ${p.width}w`}
                 sizes={PHOTO_SIZES}
-                alt={`${p.name} tee, worn on a ${p.sport} court`}
+                alt={`${p.name} ${p.kind}, worn on a ${p.sport} court`}
                 loading="lazy"
                 decoding="async"
               />
@@ -113,8 +120,11 @@ export function Products() {
 
               <div className="pcard__meta">
                 <div className="pcard__id">
-                  <span className="pcard__name">{p.name} &nbsp; Black</span>
-                  <span className="pcard__price">₹ 1599</span>
+                  {/* The full catalogue name: the collection, then the tee.
+                      Two lines on a full-size card, which is what `pcard__id`
+                      being a column and `pcard__name` wrapping are already for. */}
+                  <span className="pcard__name">Anime Sports League - {p.name} Black</span>
+                  <span className="pcard__price">₹ {p.price}</span>
                 </div>
                 <ul className="pcard__swatches" aria-label="Colours">
                   {COLOURWAYS.map((c) => (
