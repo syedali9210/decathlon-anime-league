@@ -1816,17 +1816,23 @@ body::-webkit-scrollbar {
    run this to about 120 characters a line, roughly twice what anyone reads
    comfortably. Sized in cqw like everything else in here, so it tracks the
    frame rather than the window. */
-/* The only prose on the page, and it was the hardest thing on it to read:
-   Barlow Condensed SemiBold Italic is a DISPLAY face — it is what the claim
-   beside it is set in — and five lines of it at 16px, in black, over the muddy
-   violet this lands on at 77% of the section's gradient, is a paragraph nobody
-   finishes.
-   So it stops borrowing the claim's face and gets its own plate. Roboto Flex
-   upright at a reading weight, on the site's own cream with the black rule and
-   hard offset shadow every button here carries — which both fixes the contrast
-   outright, whatever the gradient is doing behind it, and makes the block read
-   as a deliberate piece of the design rather than as type left on the
-   background. */
+/* The only prose on the page, and the piece that has been hardest to place.
+   It started as the claim's own face — Barlow Condensed SemiBold ITALIC, a
+   display cut — at 16px in black over the muddy violet the gradient reaches
+   here, which is a paragraph nobody finishes. A cream plate fixed the contrast
+   but read as a note dropped on the artwork: the one light rectangle on a page
+   built out of black plates and hard colour.
+
+   So it keeps the page's face and loses the display cut. Barlow Condensed
+   UPRIGHT at a text weight and a size that suits a condensed face — 24 where a
+   normal-width face would take 18, because the same reading colour costs a
+   condensed one more point size.
+
+   And it becomes a panel from this page rather than a box on it: near-black
+   with a violet cast so it sits inside the section's own ramp, the black rule
+   and hard offset every button here carries, and the campaign's magenta down
+   the leading edge — the same #ff1df4 the claim picks its second phrase out
+   in. The contrast is better than the cream plate's, not worse. */
 .ground__copy {
   grid-column: 2;
   /* Row two of a two-row grid, with the claim spanning both — see
@@ -1835,28 +1841,31 @@ body::-webkit-scrollbar {
      ten-line stack: the copy sat two hundred pixels below the collage it is
      written about, with nothing in between. */
   grid-row: 2;
-  max-width: 58ch;
+  max-width: 54ch;
   margin: clamp(24px, 3cqw, 52px) 0 0;
-  padding: clamp(16px, 2cqw, 30px) clamp(18px, 2.3cqw, 34px);
-  background: #f7f1e3;
+  padding: clamp(18px, 2.2cqw, 32px) clamp(20px, 2.6cqw, 38px);
+  background: #17111f;
   border: 2px solid #000;
-  border-radius: 10px;
-  box-shadow: -5px 5px 0 #000;
-  font-family: 'Roboto Flex', system-ui, sans-serif;
-  font-weight: 400;
+  border-left: 6px solid #ff1df4;
+  border-radius: 4px;
+  box-shadow: -6px 6px 0 #000;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 500;
   font-style: normal;
-  font-size: clamp(14px, 1.42cqw, 18px);
-  line-height: 1.66;
-  letter-spacing: 0.004em;
-  color: #14111c;
+  font-size: clamp(17px, 1.82cqw, 24px);
+  line-height: 1.5;
+  letter-spacing: 0.012em;
+  color: #f2ecdd;
 }
 
-/* The campaign's own word, picked out of its own sentence — one accent, so the
-   plate is not a slab of grey. */
+/* The campaign's own line, picked out of its own sentence — one accent, so the
+   panel is not a slab of grey. Gold, not the deep magenta this carried on the
+   cream plate: that colour was chosen to be dark ENOUGH against cream, and on
+   near-black it is the one phrase harder to read than the rest. */
 .ground__copy em {
   font-style: normal;
   font-weight: 700;
-  color: #b4106b;
+  color: var(--c-gold);
 }
 
 /* -- idle ----------------------------------------------------------------- */
@@ -1967,6 +1976,53 @@ body::-webkit-scrollbar {
      so this is back to what the stepping itself needs and the page no longer
      ends on 600px of empty violet. */
   padding: clamp(64px, 11vw, 176px) var(--gutter) clamp(140px, 30vh, 340px);
+}
+
+/* One named group — a category and the products under it. */
+.lineup__group {
+  max-width: 1100px;
+  margin-inline: auto;
+}
+
+.lineup__group + .lineup__group {
+  margin-top: clamp(32px, 5.5vw, 88px);
+}
+
+/* The category, set in the list's own face at the list's own weight and lean —
+   but ruled either side, which is the treatment the episode deck already gives
+   a label (see `.episodes__choose`). That rule is what buys the hierarchy: at
+   the same italic 800 as the product names, and without it, a category reads as
+   one more tee. Gold rather than the titles' white-on-pink, for the same
+   reason.
+
+   Sized off the window like the titles it sits over, so the two keep their
+   proportion at every width. */
+.lineup__group-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 1.8vw, 28px);
+  margin: 0 0 clamp(10px, 1.6vw, 26px);
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  font-size: clamp(15px, 2.1vw, 32px);
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-gold);
+}
+
+/* Capped, so the rules frame the words rather than running the full measure and
+   turning the label into a divider with something written in the middle. */
+.lineup__group-title::before,
+.lineup__group-title::after {
+  content: '';
+  flex: 1;
+  max-width: clamp(36px, 11vw, 190px);
+  height: 2px;
+  background: currentColor;
+  opacity: 0.5;
 }
 
 .lineup__list {
@@ -3317,6 +3373,7 @@ html[data-custom-cursor] * {
    otherwise be shaved off at rest, which is a hairline crop nobody can name but
    everybody sees. */
 .ground__line,
+.lineup__group-title,
 .lineup__title {
   opacity: 0;
   translate: 0 0.42em;
@@ -3328,7 +3385,8 @@ html[data-custom-cursor] * {
   transition-delay: var(--in, 0ms);
 }
 
-:is(.ground, .lineup)[data-shown] :is(.ground__line, .lineup__title) {
+:is(.ground, .lineup)[data-shown]
+  :is(.ground__line, .lineup__group-title, .lineup__title) {
   opacity: 1;
   translate: 0 0;
   clip-path: inset(-22% -8% -22% -8%);
@@ -3360,11 +3418,15 @@ html[data-custom-cursor] * {
 .products__prop[data-prop='tennisball'] { --in: 590ms; }
 
 /* Down the list, then the odds and ends behind it. */
-.lineup__item:nth-child(1) .lineup__title { --in: 0ms; }
-.lineup__item:nth-child(2) .lineup__title { --in: 80ms; }
-.lineup__item:nth-child(3) .lineup__title { --in: 160ms; }
-.lineup__item:nth-child(4) .lineup__title { --in: 240ms; }
-.lineup__item:nth-child(5) .lineup__title { --in: 320ms; }
+/* The category leads its own group, then the products under it. `nth-child`
+   counts within each list, so the second group starts its own count — which is
+   what it should do: each group announces itself and deals its own items. */
+.lineup__group-title { --in: 0ms; }
+.lineup__item:nth-child(1) .lineup__title { --in: 70ms; }
+.lineup__item:nth-child(2) .lineup__title { --in: 150ms; }
+.lineup__item:nth-child(3) .lineup__title { --in: 230ms; }
+.lineup__item:nth-child(4) .lineup__title { --in: 310ms; }
+.lineup__item:nth-child(5) .lineup__title { --in: 390ms; }
 .lineup__scatter[data-scatter='helmet'] { --in: 300ms; }
 .lineup__scatter[data-scatter='ball'] { --in: 390ms; }
 .lineup__scatter[data-scatter='racket'] { --in: 480ms; }
@@ -3378,6 +3440,7 @@ html[data-custom-cursor] * {
   .ground__deck,
   .ground__copy,
   .ground__line,
+  .lineup__group-title,
   .lineup__title,
   .lineup__scatter {
     --in: 0ms;
