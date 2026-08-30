@@ -54,6 +54,22 @@ const SCATTER = [
   { id: 'shuttle', src: propShuttle, kind: 'img' },
 ] as const
 
+/**
+ * How far each scattered prop lags or leads the page, as a share of the scroll
+ * the section takes to cross the window. Signed: negative rides up against the
+ * scroll, positive trails it.
+ *
+ * The same idea as the catalogue's balls — see `drift` in propMotion.ts — and
+ * about half the share of it, because these sit BEHIND the titles rather than
+ * in the gaps between cards, and a prop that travels far enough to reach a word
+ * is a prop in the way. A share rather than a pixel count, so the differential
+ * holds at any window height and any list length.
+ *
+ * Split either side of where the stylesheet places each one, so the excursion
+ * is centred on the artwork's own position instead of running away from it.
+ */
+const DRIFT = [-0.05, 0.06, -0.065, 0.045]
+
 export function Lineup() {
   const section = useRef<HTMLElement>(null)
   const [open, setOpen] = useState(0)
@@ -90,7 +106,48 @@ export function Lineup() {
       // out so it is always entered from the top.
       onLeaveBack: () => setOpen(0),
     })
-    return () => st.kill()
+
+    /**
+     * The props are not pinned to the list. Over the section's pass they gain
+     * or lose a little of the page's own travel, so they slide against the
+     * titles the whole way past rather than riding with them.
+     *
+     * GSAP writes `transform`; the section reveal writes CSS `translate` on the
+     * same elements. Two different properties that compose, which is the only
+     * reason both can own a piece of this movement at once — the same split the
+     * episode cards use for their float and their deal.
+     */
+    const scatter = [...el.querySelectorAll<HTMLElement>('.lineup__scatter')]
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const pass = () => el.offsetHeight + window.innerHeight
+    const drifts = still
+      ? []
+      : scatter.map((prop, i) => {
+          const half = () => (DRIFT[i % DRIFT.length] * pass()) / 2
+          return gsap.fromTo(
+            prop,
+            { y: () => -half() },
+            {
+              y: () => half(),
+              ease: 'none',
+              scrollTrigger: {
+                trigger: el,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true,
+                invalidateOnRefresh: true,
+              },
+            },
+          )
+        })
+
+    return () => {
+      st.kill()
+      drifts.forEach((t) => {
+        t.scrollTrigger?.kill()
+        t.kill()
+      })
+    }
   }, [])
 
   return (

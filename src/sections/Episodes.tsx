@@ -13,6 +13,7 @@ import backApexKick from "../assets/episodes/back-apex-kick.svg";
 import backRimCrush from "../assets/episodes/back-rim-crush.svg";
 import { animateCard } from "./episodeParts";
 import { namespaceIds } from "../lib/inlineSvg";
+import { scrollToSection } from "../lib/useParallax";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -31,6 +32,23 @@ function refreshTriggers() {
 }
 
 const TITLE = "Welcome to the anime world";
+
+/** Where every EXPLORE pill goes. The hero's banners and the Shop pill agree. */
+const SHOP_URL = "https://www.decathlon.in/";
+
+/**
+ * Seconds the card's journey to the story takes.
+ *
+ * Long, and deliberately so. The story sits several sections below the deck,
+ * and the point of sending a reader there from a poster is that they see what
+ * is between the two on the way — the catalogue, the balls crossing it. At the
+ * cue's own 1.1s that stretch is a blur and the arrival reads as a page change;
+ * at this length it reads as travelling.
+ */
+const JOURNEY = 2.8;
+
+/** The story the cards lead to. */
+const STORY = ".ground";
 
 /**
  * The section announces itself one line at a time before it shows anything.
@@ -157,15 +175,20 @@ function Card({ ep }: { ep: (typeof EPISODES)[number] }) {
  * picks up after a short gap, and what is left at the end is the hold that
  * gives the landed deck a beat before the section scrolls on.
  */
-const INTRO_SPAN = 0.66;
+// The relay is scrubbed, so this is a share of a window that is itself now
+// 300svh rather than 490 — the sequence keeps every beat and takes about a
+// third of the scroll it used to. It was two and a half screens of one line of
+// type at a time on an otherwise empty screen, which reads as the page having
+// stalled rather than as a build-up, with the deck three flicks out of reach.
+const INTRO_SPAN = 0.46;
 // The same mark the intro ends on, not a hair after it: the row is revealed by
 // the last frame of the intro, and any gap between the two would show the deck
 // sitting undealt.
 const DEAL_AT = INTRO_SPAN;
-// Widened with the runway's trim: the deal was getting 0.26 of a 460svh pinned
-// window and now gets 0.27 of a 390svh one, so it loses about as much scroll as
-// the section as a whole does rather than taking the cut twice over.
-const DEAL_SPAN = 0.27;
+// Widened as the intro gave scroll back: the deal is the payoff and now takes
+// more than a third of the pinned window instead of a quarter of it, so the
+// cards land at a readable pace out of a much shorter section.
+const DEAL_SPAN = 0.36;
 
 /**
  * The section announces itself before it shows anything, and it does it one line
@@ -299,9 +322,12 @@ function useIntroSequence(
         tl.fromTo(
           c,
           { autoAlpha: 0, y: 60 },
-          // `back.out(1.1)` rather than 1.7: the overshoot is what made these
-          // snap. Enough of it left to still land with some weight.
-          { autoAlpha: 1, y: 0, duration: 0.65, ease: "back.out(1.1)" },
+          // `power2.out`, not `back`. An overshoot is a played beat: it works
+          // when time runs it, and wobbles when a SCRUB does — dragging back a
+          // few pixels replays the bounce, which is most of what read as the
+          // text not being smooth. The claims are scrubbed, so they get an ease
+          // that only ever settles.
+          { autoAlpha: 1, y: 0, duration: 0.65, ease: "power2.out" },
           at,
         ).to(
           c,
@@ -520,15 +546,20 @@ function useLabelCycle(host: React.RefObject<HTMLElement | null>) {
       phrases.forEach((p) => {
         const chars = p.querySelectorAll(".episodes__char");
         tl.set(p, { autoAlpha: 1 })
+          // This one IS played rather than scrubbed, so it keeps its
+          // overshoot. The stretch comes down from 1.5: a glyph at half again
+          // its height is re-rasterised every frame, and twenty of them at once
+          // is what made the label judder where the rest of the cycle did not.
           .from(chars, {
             yPercent: 120,
             rotate: -8,
-            scaleY: 1.5,
+            scaleY: 1.2,
             opacity: 0,
             transformOrigin: "50% 100%",
             duration: 0.45,
-            ease: "back.out(2.4)",
+            ease: "back.out(2.2)",
             stagger: 0.028,
+            force3D: true,
           })
           // A gap on the position parameter rather than a tween on {}: an empty
           // target inherits the timeline defaults and GSAP rightly rejects it.
@@ -735,16 +766,42 @@ export function Episodes() {
                     <Card ep={ep} />
                   </div>
                 </div>
+                {/* The poster IS the way into the story. Laid over the card
+                    rather than wrapped around it: `.ecard` carries both the
+                    deal's transform and the flip, and a <button> in that chain
+                    would be a third owner of the same property. Its own name,
+                    because the poster's `aria-label` describes the artwork and
+                    this describes the errand. */}
+                <button
+                  className="ecard__jump"
+                  type="button"
+                  onClick={() => {
+                    const story = document.querySelector<HTMLElement>(STORY);
+                    if (story) scrollToSection(story, JOURNEY);
+                  }}
+                >
+                  <span className="sr-only">
+                    Read the story behind {ep.title}
+                  </span>
+                </button>
               </div>
               {/* Under the card, not on it: the poster is the artwork and this
                   is a control. It waits for `data-landed` — the deck's own
                   "dealt and still" flag — because a row of buttons sitting in
                   their final places while the cards are still flying in reads
                   as a broken layout rather than a deliberate one.
+                  Off the page to Decathlon, where the card above it goes down
+                  the page to the story — the two things a reader can want from
+                  a poster, and each on its own control rather than both on one.
                   The name is for assistive tech: five links all called
                   "Explore" are a list of nothing. */}
-              <a className="ecard__shop" href={`#tee-${ep.id}`}>
-                Explore<span className="sr-only"> {ep.title}</span>
+              <a
+                className="ecard__shop"
+                href={SHOP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Explore<span className="sr-only"> {ep.title} at Decathlon</span>
               </a>
             </li>
           ))}

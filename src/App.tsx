@@ -6,6 +6,7 @@ import { Lineup } from './sections/Lineup'
 import { Footer } from './sections/Footer'
 import { Cursor } from './Cursor'
 import { ShopButton } from './ShopButton'
+import { ScrollCue } from './ScrollCue'
 import { useSmoothScroll } from './lib/useParallax'
 import { useIdleOffscreen } from './lib/useIdleOffscreen'
 import { useReveal } from './lib/useReveal'
@@ -29,6 +30,7 @@ export default function App() {
       </main>
       {/* Outside <main>: it is the page's footer, not a section of the article. */}
       <Footer />
+      <ScrollCue />
       <ShopButton />
       <Cursor />
     </>

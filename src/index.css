@@ -135,6 +135,66 @@ body {
   scrollbar-width: none;
 }
 
+/* ── the page's field ────────────────────────────────────────────────────── */
+
+/* ONE gradient, painted once across the whole document, exactly as
+   yesnowww.com does it — the same reference the hero's scroll-out was measured
+   off. Theirs is a single 7269px block carrying
+   `linear-gradient(#000, #7851ae 24%, #f8446a 49%, #7851ae 74%, #000)` and
+   nothing else: no scroll listener, no per-section legs, no JS at all. Scrolling
+   simply reveals more of one continuous ramp, which is why the colour never
+   appears to step.
+   This page used to run five gradients — one per section, hand-matched so each
+   picked up the colour the one above ended on. They met without a visible join,
+   but the RATE reset at every boundary: a section 1000px tall travelled its
+   whole ramp in 1000px while the one below took 2200px over the same distance
+   of colour, so the page sped up and slowed down as it scrolled. One ramp over
+   the whole height has one rate, which is the thing being copied here.
+   Stops are percentages of the document, so they drift as sections grow and
+   shrink with the viewport. That is fine, and is the point: there is nothing
+   left to keep in register.
+   #root is the whole scrolling document — every section and the footer sit
+   inside it, and the fixed controls contribute no height.
+
+   Five stops, and each colour is a muted one. Both of those are the whole of
+   why it reads calm.
+
+   The first attempt at this ramp used the campaign's own saturated swatches at
+   full strength — #7851ae to #f8446a to #c52354 to #6b4a9a — and it changed
+   too fast in two separate ways. The obvious one is distance: those four sat
+   inside the back two thirds of the page, so a big jump in both hue and
+   brightness had about a section and a half to happen in.
+
+   The one that mattered more is DIRECTION. That ramp climbed to a hot pink at
+   the middle, fell back to crimson, then climbed again to violet — three
+   reversals, and the eye reads every reversal as an event. A gradient with a
+   turning point in it announces itself however slowly it is travelling. This
+   one only ever goes one way: ink, to indigo, to a dusk plum, to the footer's
+   violet. Nothing to notice, which is the brief.
+
+   Muting does the rest. The distance a colour travels is what registers as
+   speed, so two neighbouring stops a quarter of the page apart read as fast if
+   they are neon and slow if they are dusk. These are the same hues as before,
+   pulled well down in saturation and lightness — which also hands the ground
+   collage back the dark backdrop it was designed against. */
+#root {
+  background: linear-gradient(
+    180deg,
+    /* The hero is a full-bleed board on ink and holds it to its own foot. */
+    #000 0%,
+    #0c0a18 24%,
+    /* The reference's violet, taken right down — the episode deck deals on it. */
+    #33265a 50%,
+    /* Where the hot pink used to peak. A dusk plum instead: the same warmth,
+       none of the shout, and the catalogue's black card plates carry against
+       it far better than they did against a bright field. */
+    #5e3560 74%,
+    /* The footer board's own field, arrived at with a section to spare so the
+       last screen has no join to see. */
+    var(--c-violet) 93%
+  );
+}
+
 body::-webkit-scrollbar {
   display: none;
 }
@@ -422,13 +482,12 @@ body::-webkit-scrollbar {
    pinned for: 130svh here, of which the deal takes 0.72 and the rest is the hold
    that gives the landed deck a beat before the section scrolls on. That hold is
    the gap between this section and the next. */
-/* The gradient and the clip both live here, not on the sticky screen inside.
-   On the screen, `overflow: clip` was cutting the deck: the pile sits ~0.95 of a
-   card below the row, which is past the bottom of a 100svh box, so cards were
-   sliced as they rose. Out here the clip is 130svh further down and the deck
-   has room; the gradient has to move with it, or cards leaving the screen would
-   cross onto bare page black instead of the section's own ramp.
-   First leg of the page-length ramp — see .products for the next. */
+/* The clip lives here, not on the sticky screen inside. On the screen,
+   `overflow: clip` was cutting the deck: the pile sits ~0.95 of a card below the
+   row, which is past the bottom of a 100svh box, so cards were sliced as they
+   rose. Out here the clip is further down and the deck has room.
+   No background of its own any more — the page's one ramp shows through, so a
+   card leaving the screen crosses the same colour it was dealt on. */
 .episodes-runway {
   position: relative;
   /* Long enough to hold the whole sequence: the headline riding up from the
@@ -438,14 +497,14 @@ body::-webkit-scrollbar {
      and each of them wants roughly a third of a screen of scroll to itself —
      at 230svh they overlapped into one event, and at 420svh they still went by
      too fast to read.
-     560 was more than the sequence needed once the beats themselves were
-     lengthened: the moves now take a bigger share of the timeline, so each one
-     still gets its scroll out of a shorter window. See Episodes.tsx. */
-  height: 490svh;
+     490 was still two and a half screens of scroll with nothing on them but
+     one line of type at a time, which read as the page having run out rather
+     than as a build-up — the deck is what the reader came for and it was three
+     flicks away. The sequence is SCRUBBED, so shortening the runway does not
+     drop a beat: the same timeline is mapped onto less scroll and every beat
+     keeps its share. See Episodes.tsx. */
+  height: 300svh;
   overflow: clip;
-  background:
-    linear-gradient(180deg, #000 0%, rgb(120 81 174 / 0.5) 100%),
-    #282828;
 }
 
 /* Arrives in normal flow, under its own gradient, rather than as a panel slid
@@ -558,7 +617,7 @@ body::-webkit-scrollbar {
    nothing on it. The intro still plays; it just gets most of the window. */
 @media (max-width: 640px) {
   .episodes-runway {
-    height: 300svh;
+    height: 210svh;
   }
 }
 
@@ -740,6 +799,12 @@ body::-webkit-scrollbar {
   text-wrap: balance;
   color: #fff;
   opacity: 0;
+  /* Five elements, and the lead one is tweened from 3.2x scale: without a
+     promoted layer the browser re-rasterises the glyphs every frame of that
+     move, which is the stutter the sequence had. Unlike the 74 characters below
+     — where the same promotion would cost more than it saves — this is five
+     boxes, held for the length of one section. */
+  will-change: transform, opacity;
 }
 
 /* The headline keeps the size and measure it has in the layout — this is the
@@ -889,7 +954,48 @@ body::-webkit-scrollbar {
 /* The lean is there before the bob starts, too — the animation is paused until
    the deck lands, and a paused animation still applies its first keyframe. */
 .ecard__float {
+  /* A rotated element is already a containing block for anything absolutely
+     positioned inside it, so the click target below would resolve against this
+     box either way. Stated anyway, because that is a side effect of a transform
+     rather than a declaration of intent, and a --tilt of 0 is one refactor away
+     from being written as `none`. */
+  position: relative;
   transform: rotate(var(--tilt, 0deg));
+}
+
+/* The poster is the way into the story, so the whole card is one control.
+   Laid OVER the card rather than wrapped around it: `.ecard` carries both the
+   deal's transform and the flip, and a <button> in that chain would be a third
+   owner of the same property — the bug the float/deal split exists to avoid.
+
+   Invisible on purpose. The artwork is the affordance, and the pointer already
+   says the rest: the site's cursor morphs to SHOP over anything matching
+   `button:not([disabled])`, which this is, so it announces itself the way every
+   other control on the page does. */
+.ecard__jump {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  /* Dead until the deck has dealt itself out and come to rest — the same
+     `data-landed` gate the EXPLORE pill waits on. A card that can be clicked
+     while it is still flying across the screen is a card nobody meant to hit. */
+  pointer-events: none;
+}
+
+.episodes[data-landed] .ecard__jump {
+  pointer-events: auto;
+}
+
+/* Keyboard users get the outline the poster cannot give them. */
+.ecard__jump:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 .ecard {
@@ -1027,8 +1133,6 @@ body::-webkit-scrollbar {
 
 /* ── products ────────────────────────────────────────────────────────────── */
 
-/* Second leg: picks up the violet the episodes section ends on and runs to the
-   crimson its own artboard ends on. Sampled linear, no compositing. */
 .products {
   /* The props are placed past the grid on purpose (left: 98% and 94%), and
      nothing above them clipped, so at narrow widths they pushed the document
@@ -1037,7 +1141,6 @@ body::-webkit-scrollbar {
      become a scroll container, and only on x so they can still overhang the
      cards vertically, which is the point of them. */
   overflow-x: clip;
-  background: linear-gradient(180deg, #503c6b 0%, #c52354 100%);
   padding: clamp(48px, 12.4vw, 198px) var(--gutter) clamp(48px, 8.6vw, 138px);
 }
 
@@ -1089,11 +1192,10 @@ body::-webkit-scrollbar {
 }
 
 /* The artwork's box. It carries the ratio rather than `.pcard` doing it, so the
-   meta can leave it and become a caption the grid row actually accounts for —
-   absolutely positioned it contributed nothing to the row, hung 54px past the
-   card and left 17px to the row below, which read as the price belonging to the
-   wrong card. While the meta is absolute this box IS the card's whole height,
-   so every percentage below still measures what it always did. */
+   meta can leave it and become a caption on a phone, where the band is too
+   shallow to hold two readable lines — see the container query below. While the
+   meta is absolute this box IS the card's whole height, so every percentage
+   here measures what it always did. */
 .pcard__plate {
   position: relative;
   aspect-ratio: 425 / 723;
@@ -1121,38 +1223,55 @@ body::-webkit-scrollbar {
   pointer-events: none;
 }
 
+/* The label, on the plate, where the board puts it — but given the whole black
+   band instead of the last sliver of it.
+   The board's own `top` is 93.36%, which leaves 48px of a 723 card: two lines
+   of 12px type with ten pixels to spare, and by the time three cards fit a
+   laptop that is 9px. At that size the name and the price were one grey smudge
+   and the price was simply not read. Nothing below the checker blocks and the
+   pink rule is drawn, though, and those stop at y=662 — so the band is free
+   from 91.6% down, and 92.4% clears the last of it with a few pixels to spare
+   while still buying 55px of band instead of 48. That is the difference
+   between 12px type and 17px, which is the whole fix. */
 .pcard__meta {
   position: absolute;
   left: 3.29%;
   right: 3.29%;
-  top: 93.36%;
+  top: 92.4%;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
-  color: #e4e4e4;
+  color: #fff;
   font-family: 'Roboto Flex', system-ui, sans-serif;
-  /* 2.82cqi is the artboard's own ratio — 12px of type on a 425px card — so a
-     full-size card is pixel-identical to the board and every smaller one is a
-     true scale of it. The floor is legibility. */
-  font-size: clamp(9px, 2.82cqi, 12px);
-  line-height: normal;
+  /* 4cqi is 17px on the board's own 425 card, and every smaller card is a true
+     scale of it. The floor is legibility; below the card size where the floor
+     stops fitting the band, the container query below drops it out. */
+  font-size: clamp(9px, 4cqi, 17px);
+  line-height: 1.2;
 }
 
 .pcard__id {
   display: flex;
   flex-direction: column;
-  gap: 0.67em;
+  gap: 0.42em;
   min-width: 0;
 }
 
 .pcard__name {
   font-weight: 600;
-  white-space: pre-wrap;
+  letter-spacing: 0.005em;
 }
 
+/* The one number on the card, and the reason the card is here. Gold and
+   heavier than the name — as white text at the same weight it read as the
+   name's second line rather than as a price. */
 .pcard__price {
-  font-weight: 400;
+  font-weight: 700;
+  font-size: 1.06em;
+  letter-spacing: 0.01em;
+  color: var(--c-gold);
+  white-space: nowrap;
 }
 
 .pcard__swatches {
@@ -1162,11 +1281,12 @@ body::-webkit-scrollbar {
   padding: 0;
   list-style: none;
   flex-shrink: 0;
+  padding-top: 0.1em;
 }
 
 .pcard__swatches li {
-  width: 0.83em;
-  height: 0.83em;
+  width: 0.8em;
+  height: 0.8em;
   border-radius: 50%;
 }
 
@@ -1187,11 +1307,12 @@ body::-webkit-scrollbar {
   width: 100%;
   height: auto;
   overflow: visible;
-  /* The bob. On the <svg>, not the host: GSAP owns the host's transform for the
-     scroll drift, and two owners of one transform is the bug that keeps costing
-     an afternoon. */
-  animation: prop-float var(--prop-float, 4s) ease-in-out infinite alternate;
-  animation-delay: var(--prop-phase, 0s);
+  /* No bob. These used to hover on a four-second loop on top of their scroll
+     drift, and two idle motions on one object is one too many — the balls read
+     as bobbing in place rather than as passing the cards. The drift alone is
+     the whole effect now: over the section's pass each one gains or loses a
+     few per cent of the page's travel, so it slides against the cards behind
+     it. See `drift` in propMotion.ts. */
   /* Hard black, no blur, offset down-right — the board's own drop shadow
      (Figma 249-1348 / 1421 / 1422 / 1322, all of them `feOffset` with no
      `stdDeviation`). Not a soft ground shadow: it is a flat comic offset, which
@@ -1226,33 +1347,6 @@ body::-webkit-scrollbar {
 .products__prop[data-prop='tennisball'] svg {
   --sx: 0.85;
   --sy: 1;
-}
-
-@keyframes prop-float {
-  to {
-    transform: translateY(-13px);
-  }
-}
-
-/* Smaller and fainter at the top of the bob — the shadow of something further
-   from the ground. */
-/* Unequal periods so four props never bob as one mass, the same reason the
-   flags run on three periods that do not divide into each other. */
-.products__prop[data-prop='football'] {
-  --prop-float: 4.3s;
-  --prop-phase: -1.1s;
-}
-.products__prop[data-prop='cricketball'] {
-  --prop-float: 3.6s;
-  --prop-phase: -0.4s;
-}
-.products__prop[data-prop='shuttle'] {
-  --prop-float: 5.1s;
-  --prop-phase: -2.3s;
-}
-.products__prop[data-prop='tennisball'] {
-  --prop-float: 3.9s;
-  --prop-phase: -1.7s;
 }
 
 /* The two on the ends sit a little further in than the board draws them: at 1%
@@ -1336,45 +1430,36 @@ body::-webkit-scrollbar {
   }
 }
 
-/* The plate the meta sits in is 6.64% of the card's height. That holds two
-   lines as long as the type can keep shrinking with the card — but the type
-   floors at 9px for legibility, and below a ~280px card two 9px lines no longer
-   fit. On a phone two-up that is a 165px card and a 19px plate: the meta was
-   spilling 18px out of the bottom of the card.
-   So below that size it stops being a plate label and becomes a caption under
-   the card, where the row gap gives it all the room it needs.
+/* The band is 8.2% of the card's height, and the type floors at 9px — so below
+   a ~280px card two 9px lines no longer fit inside it. On a phone two-up that
+   is a 165px card and a 23px band: the label was spilling out of the bottom of
+   the card. There it stops being a plate label and becomes a caption under the
+   card, where the row gap gives it all the room it needs.
    Keyed to the CARD, not the window, because the card's width does not track
    the viewport's — the grid reflows underneath it. A three-up laptop and a
    two-up phone both land here; a two-up tablet, whose cards are bigger than
    either, correctly does not. */
 @container (max-width: 280px) {
-  /* Back onto the plate, and up to the top of the black band rather than into
-     the last 6.64% of it. The photo ends at 88.5%, so there are 35px of card
-     under it on a phone — enough for the label, but only if it stops being a
-     column. Stacked, the full name runs to two lines and the price sits under
-     them: 51px into a 35px band, which is what pushed it off the card.
-     Side by side the two lines are the whole of it. */
-  /* Taller than the board's 425:723. The label has to live in the black band
-     under the photo, and that band is a fixed share of the plate — the only way
-     to give it room is to give the whole card height. The chrome stretches with
-     it (it carries `preserveAspectRatio="none"` for this; the line-up sizes the
-     same file `height: auto`, so its own copy is untouched) and the photo is
-     `object-fit: cover`, so it re-crops rather than distorting. */
-  .pcard__plate {
-    aspect-ratio: 425 / 800;
-  }
-
-  /* Anchored to the card's foot rather than to the photo's edge, so the label
-     stays the same distance off the bottom whether the name takes one line or
-     two instead of hanging from the top of the band with the slack under it. */
+  /* Stays ON the plate. It used to drop out to a caption under the card here,
+     because two stacked lines of 9px type do not fit a 34px band — but a label
+     hanging below the artwork reads as belonging to no card in particular, and
+     on a two-up grid it reads as belonging to the wrong one.
+     One line fits that band with room to spare. So the label goes to a single
+     row and the collection prefix goes with it: "Crick-Stryke Black  ₹ 899" is
+     141px of a 161px card at 11px type, where the full name is 172px of it
+     before the price has been set at all.
+     Anchored to the plate's foot rather than hung from 92.4% of it, so it keeps
+     the same distance off the bottom whatever the band works out at. */
   .pcard__meta {
     top: auto;
-    bottom: 3%;
-    align-items: center;
-    /* Two steps down from the plate label's size: at ~8px the two lines and the
-       price sit in the middle of the band instead of filling it corner to
-       corner. */
-    font-size: clamp(7.5px, 4.5cqi, 9.5px);
+    bottom: 4%;
+    align-items: baseline;
+    /* 6.4cqi is 11px on a 172px phone card. The floor is legibility. */
+    font-size: clamp(9px, 6.4cqi, 12px);
+  }
+
+  .pcard__collection {
+    display: none;
   }
 
   .pcard__id {
@@ -1383,15 +1468,18 @@ body::-webkit-scrollbar {
     gap: 0.6em;
   }
 
-  .pcard__price {
+  /* Belt and braces: if a longer name is ever added to the catalogue it is
+     trimmed rather than allowed to shove the price off the card. */
+  .pcard__name {
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* The colourway dots go. On a 177px card they are two 5px circles, and the
+  /* The colourway dots go. On a 172px card they are two 5px circles, and the
      28px they cost — their own width plus the gap — is the difference between
-     the name setting on two lines and on three. Three does not fit the band,
-     which is the whole reason the label was off the card to begin with. They
-     are back the moment there is a card wide enough to hold both. */
+     the name and the price sharing a line and not. They are back the moment
+     there is a card wide enough to hold both. */
   .pcard__swatches {
     display: none;
   }
@@ -1409,21 +1497,9 @@ body::-webkit-scrollbar {
    them lives in the [data-character] blocks below: where the grid and the
    athlete sit, and the two colours.
 
-   Fourth leg of the page-length ramp. The board runs black -> #453b73 ->
-   #ec9eaf, and the dark top is most of why the sun and the shot carry: dropping
-   it for a straight crimson-to-violet ramp washed the whole section out. So the
-   board's ramp is kept from 20% down (#161326 IS its colour at that mark) and
-   only the first fifth is invented, easing out of the crimson `.products` ends
-   on so the seam does not read as a cut. */
+   No background of its own: the page's one ramp runs through it. */
 .ground {
   overflow-x: clip; /* the athlete's leading arm crosses the frame's left edge */
-  background: linear-gradient(
-    180deg,
-    #c52354 0%,
-    #161326 20%,
-    #453b73 61.4%,
-    #ec9eaf 100%
-  );
   /* 217 of 1596, top and bottom -- the board's own symmetric margin. */
   padding: clamp(56px, 13.6vw, 217px) var(--gutter);
 }
@@ -1509,15 +1585,20 @@ body::-webkit-scrollbar {
      of the accessibility tree and out of the pointer's way. Held until the fade
      has finished, which is what the delayed visibility step is. */
   visibility: hidden;
+  /* 420, not 700. Four characters at four and a half seconds each is nineteen
+     seconds to see the collection through, and a fade that long on top of it
+     read as the picture struggling rather than turning over. Retimed with
+     `HOLD` in Ground.tsx and `FADE` in groundMotion.ts — all three are the
+     same beat and have to move together. */
   transition:
-    opacity 700ms ease,
-    visibility 0s linear 700ms;
+    opacity 420ms ease,
+    visibility 0s linear 420ms;
 }
 
 .ground__slide[data-on] {
   opacity: 1;
   visibility: visible;
-  transition: opacity 700ms ease;
+  transition: opacity 420ms ease;
 }
 
 /* `aspect-ratio` rather than a height, so the frame keeps the board's 976:918
@@ -1735,6 +1816,17 @@ body::-webkit-scrollbar {
    run this to about 120 characters a line, roughly twice what anyone reads
    comfortably. Sized in cqw like everything else in here, so it tracks the
    frame rather than the window. */
+/* The only prose on the page, and it was the hardest thing on it to read:
+   Barlow Condensed SemiBold Italic is a DISPLAY face — it is what the claim
+   beside it is set in — and five lines of it at 16px, in black, over the muddy
+   violet this lands on at 77% of the section's gradient, is a paragraph nobody
+   finishes.
+   So it stops borrowing the claim's face and gets its own plate. Roboto Flex
+   upright at a reading weight, on the site's own cream with the black rule and
+   hard offset shadow every button here carries — which both fixes the contrast
+   outright, whatever the gradient is doing behind it, and makes the block read
+   as a deliberate piece of the design rather than as type left on the
+   background. */
 .ground__copy {
   grid-column: 2;
   /* Row two of a two-row grid, with the claim spanning both — see
@@ -1743,16 +1835,28 @@ body::-webkit-scrollbar {
      ten-line stack: the copy sat two hundred pixels below the collage it is
      written about, with nothing in between. */
   grid-row: 2;
-  max-width: 62ch;
-  margin: clamp(20px, 2.6cqw, 44px) 0 0;
-  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
-  font-weight: 600;
-  font-style: italic;
-  font-size: clamp(13px, 1.35cqw, 19px);
-  line-height: 1.65;
-  /* Black, not the claim's white: this sits at the pale end of the section's
-     gradient, where white copy has almost nothing to hold on to. */
-  color: var(--c-ink);
+  max-width: 58ch;
+  margin: clamp(24px, 3cqw, 52px) 0 0;
+  padding: clamp(16px, 2cqw, 30px) clamp(18px, 2.3cqw, 34px);
+  background: #f7f1e3;
+  border: 2px solid #000;
+  border-radius: 10px;
+  box-shadow: -5px 5px 0 #000;
+  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: clamp(14px, 1.42cqw, 18px);
+  line-height: 1.66;
+  letter-spacing: 0.004em;
+  color: #14111c;
+}
+
+/* The campaign's own word, picked out of its own sentence — one accent, so the
+   plate is not a slab of grey. */
+.ground__copy em {
+  font-style: normal;
+  font-weight: 700;
+  color: #b4106b;
 }
 
 /* -- idle ----------------------------------------------------------------- */
@@ -1857,20 +1961,6 @@ body::-webkit-scrollbar {
 .lineup {
   position: relative;
   overflow: clip;
-  /* Third leg: on from the crimson above, settling into violet for the foot of
-     the page. */
-  /* Picks up the pink `.ground` ends on and is back to that section's own
-     crimson by the end of the top padding — so the first title still sits on
-     the crimson it was designed against, and the hand-off happens in the space
-     above it. A length, not a percentage, because it has to line up with the
-     padding rather than with the section's height. */
-  background: linear-gradient(
-    180deg,
-    #ec9eaf 0%,
-    #c52354 clamp(64px, 11vw, 176px),
-    #443a72 66%,
-    var(--c-violet) 100%
-  );
   /* The trailing space is what gives the stepping room to finish. It used to be
      a whole screen and more, because this was the last section on the page and
      nothing below it could be scrolled to; the footer now supplies that room,
@@ -2477,406 +2567,333 @@ html[data-custom-cursor] * {
 
 /* ── the footer ──────────────────────────────────────────────────────────── */
 
-/* Figma 325-80. The board is 1596x804 and everything on it is placed as a
-   percentage of that, so the whole composition scales as one. Capped at its own
-   width rather than run edge to edge: past 1596 the pieces would simply get
-   bigger, and the rest of the page caps too. */
+/* Figma 343-882. A 1440x689 board on pale pink: a tomato field with a wavy edge
+   top and bottom, ruled into a black grid, and the collaboration lockup under
+   it. See Footer.tsx for the pieces and for why the rotated ones are placed by
+   numbers that are not Figma's.
+
+   Uncapped to 1920 rather than to the artboard's own 1440. The field's wave is
+   drawn to meet both edges of the window, and a board that stops at 1440 leaves
+   it meeting a margin instead — visible on any common desktop. Everything here
+   is a percentage of the board, so letting the board be the window simply
+   scales the poster. The cap is only there to stop an ultrawide turning the
+   footer into a sixteen-hundred-pixel-tall wall. */
 .footer {
-  position: relative;
-  background: var(--c-violet);
-  /* Picks up the violet the line-up ends on, so the two meet without a seam. */
-  overflow: clip;
+  background: #f6c9fa;
+  /* The pieces sit inside the board, but a rotated export can round a fraction
+     of a pixel past it; clip the axis that would otherwise let the page pan. */
+  overflow-x: clip;
 }
 
 .footer__board {
   position: relative;
-  width: min(100%, 1596px);
+  width: min(100%, 1920px);
   margin-inline: auto;
-  aspect-ratio: 1596 / 804;
-  /* Type inside the credit card is sized against the BOARD, not the window, so
-     the card scales with the artwork it belongs to. */
+  aspect-ratio: 1440 / 689;
+  /* So the type on the board is sized against the BOARD rather than the window
+     — the board stops growing at 1920 and the window does not. */
   container-type: inline-size;
 }
 
+/* Two files at the same origin: the field carries the wave, and the ruling is
+   drawn thirteen units shorter so its lines stop inside the wave rather than
+   crossing it. Both are full-width and take their height from their own ratio,
+   which is the board's, so they land on the board's own marks at any size. */
+.footer__field,
 .footer__grid {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 2.61%; /* 18 of 689 */
   width: 100%;
-  height: 100%;
-  /* The file is `preserveAspectRatio="none"` and the board holds the artboard's
-     ratio, so this lands on its own lines either way. */
-  display: block;
-}
-
-/* <picture> is a box around the image, not the image — the two that swap by
-   media query need their <img> told to fill it. */
-.footer__grid img,
-.footer__arch img,
-.footer__plaque img {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.footer__arch img,
-.footer__plaque img {
-  /* The two arches are different shapes, so the height follows whichever
-     loaded rather than being pinned by the wrapper. */
   height: auto;
 }
 
+/* The ruling is in the DOM rather than behind an <img> — see `useGrid` — so the
+   host is a plain box and the artwork inside it carries the height. */
+.footer__grid svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 
-/* One rule for everything pinned to the board. `--x`/`--y` are the piece's
-   CENTRE, not its top-left: half the pieces here are turned, and a rotation
-   about a corner moves the piece as well as turning it. */
+/* -- pinned pieces -------------------------------------------------------- */
+
+/* Position outside, artwork inside. The pin is placed by top-left and sized by
+   width; the piece fills it and takes its height from the artwork's own ratio.
+   Splitting them hands every moving part its own property to own: the pin's
+   `transform` belongs to the scroll drift, the piece's `rotate` and `scale` to
+   the board, and its `translate` to the arrival at the foot of this block. */
+.footer__pin {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+}
+
 .footer__piece {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: var(--w);
-  height: auto;
-  translate: -50% -50%;
   display: block;
-}
-
-/* Placed by their top-left on the board, like the boards elsewhere on the site,
-   so these opt out of the centring above. */
-.footer__line,
-.footer__speck,
-.footer__plaque,
-.footer__emblem,
-.footer__arch,
-.footer__kit,
-.footer__credit {
-  translate: none;
-}
-
-.footer__star {
-  rotate: -30deg;
-}
-
-/* Off the wide board entirely; the portrait one places it inside the emblem.
-   After `.footer__piece`, not before: the two are equally specific and that one
-   sets `display: block`, so order is what decides this. */
-.footer__lockup {
-  display: none;
-}
-
-/* -- the kit ------------------------------------------------------------- */
-
-/* The racket is drawn wider than the box the board gives it and hangs off the
-   left edge, where the board clips it. Its own container, so the two pieces
-   inside can be placed against the box rather than against the board. */
-.footer__kit {
-  aspect-ratio: 119 / 132;
-  overflow: clip;
-  container-type: inline-size;
-}
-
-/* Written as properties because the portrait board sits the same two pieces in
-   the same box at different proportions — a bigger bat against a shorter
-   racket — and that is the whole of the difference between them. */
-.footer__kit {
-  --oval-x: 0%;
-  --oval-y: 0%;
-  --oval-w: 32.65%;
-  --racket-x: 41.84%;
-  --racket-y: 49.92%;
-  --racket-w: 113.35%;
-}
-
-.footer__oval {
-  position: absolute;
-  left: var(--oval-x);
-  top: var(--oval-y);
-  width: var(--oval-w);
-  height: auto;
-  display: block;
-}
-
-.footer__racket {
-  position: absolute;
-  left: var(--racket-x);
-  top: var(--racket-y);
-  width: var(--racket-w);
-  height: auto;
-  translate: -50% -50%;
-  rotate: 165deg;
-  display: block;
-}
-
-/* -- the credit card ------------------------------------------------------ */
-
-/* 162x219 on the board, padded 21/14/8 — the photo takes the space the type
-   does not, which is what `flex: 1` is doing rather than a measured height. */
-/* Its own container, and everything inside it is sized in `cqw` of the CARD.
-   Percentages would have been the obvious choice and are wrong: padding
-   percentages resolve against the containing BLOCK, which here is the board, so
-   `6%` on a 99px card asked for 24px of padding and left 50px of the 87 the
-   copy needed. Card units hold whatever the board is doing. */
-/* The card is the container; the column inside it is what gets padded, and
-   everything in there is measured in `cqw` of the CARD. Percentages would have
-   been the obvious choice and are wrong twice over: padding percentages resolve
-   against the containing BLOCK, which here is the board, so `6%` on a 99px card
-   asked for 24px a side — and that padding then shrank the card's content box,
-   which is what `cqw` is measured from, halving every unit inside it. */
-.footer__credit {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: var(--w);
-  aspect-ratio: 162 / 219;
-  container-type: inline-size;
-  background: #3114c0;
-}
-
-.footer__credit-inner {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  /* 12 / 21 / 14 / 8 on the board's 162-wide card. */
-  gap: 7.41cqw;
-  padding: 12.96cqw 8.64cqw 4.94cqw;
-}
-
-.footer__artist {
-  flex: 1;
-  min-height: 0;
   width: 100%;
-  object-fit: cover;
-  display: block;
+  height: auto;
+  rotate: var(--r, 0deg);
 }
 
-.footer__names {
+/* The board mirrors the shuttlecock rather than turning it. */
+.footer__piece[data-flip] {
+  scale: -1 1;
+}
+
+/* -- the words on the field ----------------------------------------------- */
+
+/* The ticket's two lines and the starburst's, set live rather than baked into
+   the sticker they sit on. Figma centres each turned line in its own box, so
+   the box is placed here and the type turns inside it — the type's width is the
+   browser's to decide, and centring is what keeps that from mattering.
+   24 of the board's 1440. */
+.footer__label {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  height: var(--h);
+  margin: 0;
+  display: grid;
+  place-items: center;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 1.67cqw;
+  line-height: normal;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #000;
+}
+
+/* The turn is on the type, not on its box: the box is where the board says the
+   line sits, and rotating it would move the centre the line is turning about. */
+.footer__label > span {
+  rotate: var(--r, 0deg);
+}
+
+/* LEAGUE is underlined on the board, and with a wavy rule rather than a
+   straight one. `from-font` and no skip-ink because the board draws it as a
+   continuous line under the whole word, descenders included. */
+.footer__label em {
+  font-style: inherit;
+  text-decoration: underline wavy;
+  text-decoration-thickness: 0.085em;
+  text-decoration-skip-ink: none;
+  text-underline-position: from-font;
+}
+
+/* Two lines on the starburst, and the only ones here that are not uppercase. */
+.footer__label--burst {
+  text-transform: none;
+  text-align: center;
+}
+
+/* -- the credit ----------------------------------------------------------- */
+
+/* Centred on the band's middle rather than hung from its top, so the row keeps
+   its place whatever height the type resolves to: (505 + 121/2) of 689. */
+.footer__credit {
+  position: absolute;
+  left: 50%;
+  top: 82.08%;
+  translate: -50% -50%;
+  margin: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  /* 147 of the card's 162: the lockup is wider than the photo above it and
-     overhangs the card's side padding. The board's own arrangement. */
-  width: 90.74%;
-  align-self: center;
+  justify-content: center;
+  gap: 1.53cqw; /* 22 of 1440 */
+  white-space: nowrap;
 }
 
-.footer__wordmark {
-  width: 100%;
+/* Artwork, not type — the mark and the wordmark are one export, as the board
+   draws them. 632.35 of 1440. */
+.footer__lockup {
+  width: 43.91cqw;
   height: auto;
-  display: block;
+  flex: none;
 }
 
-/* The board's own face — see the note on the font link in index.html for why
-   this one is loaded rather than substituted. Sized in card units, so the
-   credit holds its proportions on both boards. 20 of the card's 162. */
+/* 96 of the board's 1440. Deliberately NOT clamped: the two names have to stay
+   the same size as the wordmark beside them, and that is artwork scaling with
+   the board. A floor on one and not the other would break the lockup at exactly
+   the widths a floor is for. */
 .footer__x,
 .footer__artist-name {
   font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
   font-weight: 800;
-  font-size: 12.35cqw;
-  line-height: 0.9672;
+  font-size: 6.67cqw;
+  line-height: 1.161;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  text-align: center;
-  white-space: nowrap;
-  color: #fff;
+  color: #000;
 }
 
-/* -- tablet and phone ----------------------------------------------------- */
+/* -- how the board arrives ------------------------------------------------ */
 
-/* Below this the board is too short for its own contents: at 900px wide it is
-   453 tall, which puts the credit card at 91px and its type under 12px. The
-   composition stops being one, so it becomes a wrapped row instead — the emblem
-   on its own line, the window and the kit beside each other under it, then the
-   credit on its own line again.
+/* The field unrolls, the ruling draws itself onto it, the pieces land on the
+   ruling, and the lockup is uncovered last.
+   It is the foot of the page, so this is the one section that gets a running
+   order rather than a flat stagger — but it is still nothing more than CSS
+   transitions on the single `data-shown` flag `useReveal` already sets, with
+   each beat's delay a `--in` on the element itself. About 1.4s end to end. */
 
-   The loose decoration goes with the board it was drawn on. The stars, the
-   plaque, the speck and the stray rule are all placed against the wide field,
-   and there is no honest place for them in a column — scattered over a stack
-   they read as debris rather than as sparkle. The ruling stays, because it is
-   the field itself. */
-@media (max-width: 900px) {
-  .footer__board {
-    aspect-ratio: auto;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(24px, 5vw, 48px);
-    padding: clamp(48px, 9vw, 88px) var(--gutter);
-  }
-
-  /* The ruling is the field these sit on, so it covers whatever height the
-     column comes out at rather than stretching to it. */
-  .footer__grid {
-    object-fit: cover;
-  }
-
-  .footer__line,
-  .footer__speck,
-  .footer__plaque,
-  .footer__star {
-    display: none;
-  }
-
-  /* Back into the flow. The kit keeps its own positioning context — the racket
-     and the oval inside it are placed against IT, and left static they resolve
-     against the board instead and blow up to its width. */
-  .footer__emblem,
-  .footer__arch,
-  .footer__kit,
-  .footer__credit {
-    position: relative;
-    left: auto;
-    top: auto;
-    translate: none;
-  }
-
-  /* Own line, centred: `flex-basis: 100%` breaks the row, `max-width` keeps the
-     artwork its own size, and the auto margins put it in the middle. */
-  .footer__emblem,
-  .footer__credit {
-    flex: 0 0 100%;
-    margin-inline: auto;
-  }
-
-  .footer__emblem {
-    max-width: min(52%, 300px);
-  }
-
-  .footer__credit {
-    max-width: min(42%, 210px);
-  }
-
-  /* These two share the line between them. */
-  .footer__arch {
-    flex: 0 0 auto;
-    width: min(24%, 150px);
-  }
-
-  .footer__kit {
-    flex: 0 0 auto;
-    width: min(20%, 120px);
-  }
-
+/* Unrolled downward rather than up: the reader is arriving from above, and a
+   field that grows toward them reads as being laid out in front of them. */
+.footer__field {
+  --in: 0ms;
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 520ms cubic-bezier(0.16, 1, 0.3, 1) var(--in);
 }
 
-/* -- the portrait board --------------------------------------------------- */
+.footer[data-shown] .footer__field {
+  clip-path: inset(0 0 0 0);
+}
 
-/* Figma 328-404. Not the wide board rearranged: its own 402x860 artboard, with
-   its own ruling, its own crop of it, and a shorter arch with nobody in it.
-   Everything below is that board's own numbers, read the same way as the wide
-   one's — percentages of 402 across and 860 down.
-   The two boards' pieces sit at completely different places, so this overrides
-   `left`/`top`/`width` outright rather than the `--x`/`--y` the wide board sets
-   inline. It comes after `.footer__piece` in the file, which is what lets an
-   equally specific rule win. */
-@media (max-width: 560px) {
-  .footer__board {
-    aspect-ratio: 402 / 860;
-    display: block;
-    padding: 0;
-    gap: 0;
-  }
+/* Sixteen straight strokes, each normalised to a length of 1 by the `pathLength`
+   the component writes onto it — which is what lets ONE dash rule draw lines of
+   three different real lengths. The direction is the path data's own: verticals
+   downward, horizontals out to the right. */
+.footer__grid path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 460ms ease-out var(--in, 0ms);
+}
 
-  /* Ruled wider than the board and hung off its left edge — the portrait board
-     shows a crop of a larger grid, not a grid fitted to it. */
-  .footer__grid {
-    inset: auto;
-    left: -73.88%;
-    top: -1.63%;
-    width: 255.97%;
-    height: 101.63%;
-  }
+.footer[data-shown] .footer__grid path {
+  stroke-dashoffset: 0;
+}
 
-  .footer__grid img {
-    object-fit: fill;
-  }
+/* The thirteen verticals rain down left to right; the three horizontals sweep
+   out across their tail, so the field is ruled rather than assembled. */
+.footer__grid path:nth-child(1) { --in: 100ms; }
+.footer__grid path:nth-child(2) { --in: 118ms; }
+.footer__grid path:nth-child(3) { --in: 136ms; }
+.footer__grid path:nth-child(4) { --in: 154ms; }
+.footer__grid path:nth-child(5) { --in: 172ms; }
+.footer__grid path:nth-child(6) { --in: 190ms; }
+.footer__grid path:nth-child(7) { --in: 208ms; }
+.footer__grid path:nth-child(8) { --in: 226ms; }
+.footer__grid path:nth-child(9) { --in: 244ms; }
+.footer__grid path:nth-child(10) { --in: 262ms; }
+.footer__grid path:nth-child(11) { --in: 280ms; }
+.footer__grid path:nth-child(12) { --in: 298ms; }
+.footer__grid path:nth-child(13) { --in: 316ms; }
+.footer__grid path:nth-child(14) { --in: 280ms; }
+.footer__grid path:nth-child(15) { --in: 335ms; }
+.footer__grid path:nth-child(16) { --in: 390ms; }
 
-  .footer__emblem,
+/* Everything pinned to the field. `translate`, because the pin above is holding
+   the drift's `transform` and the piece is already holding the board's
+   `rotate`. */
+.footer__piece {
+  opacity: 0;
+  translate: 0 20px;
+  transition:
+    opacity 500ms ease-out var(--in, 0ms),
+    translate 620ms cubic-bezier(0.16, 1, 0.3, 1) var(--in, 0ms);
+}
+
+.footer[data-shown] .footer__piece {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* The emblem does not rise with the rest — it is the middle of the board and
+   the thing the composition is arranged around, so it comes up out of itself.
+   A hair of overshoot on the curve, which is safe here in a way it was not on
+   the episode relay: this is PLAYED off a flag, so it can never be dragged
+   backwards through its own bounce. */
+.footer__pin[data-piece='emblem'] .footer__piece {
+  translate: none;
+  scale: 0.86;
+  transition:
+    opacity 420ms ease-out var(--in, 0ms),
+    scale 640ms cubic-bezier(0.34, 1.42, 0.5, 1) var(--in, 0ms);
+}
+
+.footer[data-shown] .footer__pin[data-piece='emblem'] .footer__piece {
+  scale: 1;
+}
+
+.footer__label {
+  opacity: 0;
+  translate: 0 12px;
+  transition:
+    opacity 440ms ease-out var(--in, 0ms),
+    translate 560ms cubic-bezier(0.16, 1, 0.3, 1) var(--in, 0ms);
+}
+
+.footer[data-shown] .footer__label {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* The last line on the page, so it takes the treatment the page's other
+   headlines take: masked to nothing and uncovered as it rises. The inset bleeds
+   past the box because the wordmark is artwork with its own bearing and the two
+   names are set in an 800 weight whose overhang a tight crop would shave. */
+.footer__lockup,
+.footer__x,
+.footer__artist-name {
+  opacity: 0;
+  translate: 0 0.9cqw;
+  clip-path: inset(-25% -6% 100% -6%);
+  transition:
+    opacity 460ms ease-out var(--in, 0ms),
+    translate 720ms cubic-bezier(0.16, 1, 0.3, 1) var(--in, 0ms),
+    clip-path 720ms cubic-bezier(0.16, 1, 0.3, 1) var(--in, 0ms);
+}
+
+.footer[data-shown] :is(.footer__lockup, .footer__x, .footer__artist-name) {
+  opacity: 1;
+  translate: 0 0;
+  clip-path: inset(-25% -6% -25% -6%);
+}
+
+/* The running order. Ticket and starburst assemble shape first and then their
+   type; the kit lands after both, left to right across the board. */
+.footer__pin[data-piece='emblem'] { --in: 300ms; }
+.footer__pin[data-piece='ticket'] { --in: 420ms; }
+.footer__pin[data-piece='ticket-inner'] { --in: 450ms; }
+.footer__pin[data-piece='ticket-dot'] { --in: 480ms; }
+.footer__label[data-label='choose'] { --in: 470ms; }
+.footer__label[data-label='league'] { --in: 500ms; }
+.footer__pin[data-piece='burst'] { --in: 470ms; }
+.footer__label[data-label='burst'] { --in: 520ms; }
+.footer__pin[data-piece='racket'] { --in: 540ms; }
+/* Shell and seam to the same millisecond, or the ball comes apart. */
+.footer__pin[data-piece='cricketball'],
+.footer__pin[data-piece='cricketball-seam'] { --in: 590ms; }
+.footer__pin[data-piece='shuttle'] { --in: 640ms; }
+.footer__pin[data-piece='football'] { --in: 690ms; }
+.footer__lockup { --in: 560ms; }
+.footer__x { --in: 620ms; }
+.footer__artist-name { --in: 680ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The running order goes with the movement. `useReveal` sets `data-shown`
+     outright under reduced motion, so everything is already in its landed
+     state and this only has to stop it travelling there. */
+  .footer__field,
+  .footer__grid path,
+  .footer__piece,
+  .footer__label,
   .footer__lockup,
-  .footer__arch,
-  .footer__kit,
-  .footer__credit,
-  .footer__plaque {
-    display: block;
-    position: absolute;
-    flex: none;
-    max-width: none;
-    margin-inline: 0;
-    translate: none;
-  }
-
-  .footer__plaque {
-    left: 11.44%;
-    top: 5.58%;
-    width: 24.63%;
-  }
-
-  .footer__kit {
-    left: 70.65%;
-    top: 17.21%;
-    width: 13.68%;
-    aspect-ratio: 55 / 84;
-    /* Same two pieces, sat differently: the bat takes more of the box and the
-       racket less of it than on the wide board. */
-    --oval-x: 1.8%;
-    --oval-y: 3.6%;
-    --oval-w: 43.5%;
-    --racket-x: 34%;
-    --racket-y: 51.4%;
-    --racket-w: 101.3%;
-  }
-
-  .footer__emblem {
-    left: 20.15%;
-    top: 30.47%;
-    width: 59.48%;
-  }
-
-  /* Inside the emblem, under the league's own name. */
-  .footer__lockup {
-    left: 31.59%;
-    top: 50.81%;
-    width: 36.05%;
-  }
-
-  /* 12 / 14 / 6 / 8 on the portrait board's 99-wide card — a taller, narrower
-     card, padded tighter at the sides and looser at the foot. */
-  .footer__credit {
-    left: 11.44%;
-    top: 71.51%;
-    width: 24.63%;
-    aspect-ratio: 99 / 188;
-  }
-
-  .footer__credit-inner {
-    gap: 12.12cqw;
-    padding: 14.14cqw 6.06cqw 8.08cqw;
-  }
-
-  .footer__arch {
-    left: 63.43%;
-    top: 71.74%;
-    width: 25.87%;
-  }
-
-  /* The card is a third of the width it has on the wide board, so the lockup
-     takes the full inside of it and the two lines are set apart rather than
-     together — 20 over 12 on a 402 board, against 20 over 20 on a 1596 one. */
-  .footer__names {
-    width: 100%;
-  }
-
-  .footer__wordmark {
-    width: 84%;
-  }
-
-  /* The board sets the two lines apart here — 20 over 12 on its 99-wide card,
-     against 20 over 20 on the wide board's 162. */
-  .footer__x {
-    font-size: 20.2cqw;
-  }
-
+  .footer__x,
   .footer__artist-name {
-    font-size: 12.12cqw;
+    --in: 0ms;
+    translate: none;
+    clip-path: none;
+    stroke-dashoffset: 0;
+    transition: opacity 200ms ease;
+  }
+
+  .footer__pin[data-piece='emblem'] .footer__piece {
+    scale: 1;
+    transition: opacity 200ms ease;
   }
 }
 
@@ -2987,18 +3004,131 @@ html[data-custom-cursor] * {
   }
 }
 
+/* ── the scroll cue ──────────────────────────────────────────────────────── */
+
+/* Names what is under the fold and takes the reader to it — see ScrollCue.tsx
+   for why it is one fixed control rather than an arrow planted per section.
+
+   Cream, not the pink the Shop pill is: two pink pills on one screen read as
+   one control that has moved. Same rule and same hard offset shadow, so it is
+   plainly from the same set of buttons — and cream carries over the black top
+   of the page and the pale foot of it alike, which nothing sampled from the
+   gradient would. */
+.scrollcue {
+  position: fixed;
+  left: 50%;
+  bottom: var(--gutter);
+  z-index: 99;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 6px 14px 6px 18px;
+
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: clamp(15px, 1.3vw, 19px);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: #161616;
+
+  background: #f7f1e3;
+  border: 2px solid #000;
+  border-radius: 999px;
+  filter: drop-shadow(-2px 2px 0 #000);
+  cursor: pointer;
+
+  /* Held off the page while there is nothing below to point at, and out of the
+     pointer's way with it. */
+  opacity: 0;
+  translate: -50% 12px;
+  pointer-events: none;
+  transition:
+    opacity 260ms ease-out,
+    translate 260ms ease-out,
+    transform 160ms ease-out,
+    background-color 160ms ease-out;
+}
+
+.scrollcue[data-shown] {
+  opacity: 1;
+  translate: -50% 0;
+  pointer-events: auto;
+}
+
+.scrollcue__arrow {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* The whole affordance. A static arrow on a page this busy is punctuation;
+     a moving one is an instruction. */
+  animation: scrollcue-nudge 1.6s ease-in-out infinite;
+}
+
+@keyframes scrollcue-nudge {
+  0%,
+  100% {
+    transform: translateY(-2px);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+.scrollcue:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .scrollcue:hover {
+    background: var(--c-gold);
+  }
+}
+
+.scrollcue:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+/* The Shop pill takes the middle of the foot on a phone — see `.shopbtn` — so
+   the cue sits on the shelf above it rather than under it. */
+@media (max-width: 640px) {
+  .scrollcue {
+    bottom: calc(var(--gutter) + 56px);
+    min-height: 36px;
+    font-size: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollcue {
+    translate: -50% 0;
+    transition: opacity 200ms ease;
+  }
+
+  .scrollcue__arrow {
+    animation: none;
+  }
+}
+
 /* ── the section reveal ──────────────────────────────────────────────────── */
 
-/* Two stages, driven by the two flags `useReveal` sets: the field first, then
-   the contents. `data-lit` fades the section's own gradient up from the flat
-   ink it starts on; `data-shown` follows a beat later and brings in everything
-   standing on it. The order is the point — the page changes colour, and only
-   then does the reader see what arrived on it.
-
-   The gradient is faded by a pseudo-element rather than by animating
-   `background-image`, which is not an animatable property: the section keeps
-   its own gradient, and this is a flat sheet of the colour the page was on
-   before, lifted off it. */
+/* This was two stages: a sheet of flat ink over each section, scrubbed away on
+   the section's approach, and then its contents a beat behind. The sheet went
+   with the per-section gradients. It only ever made sense while each section
+   owned its own ramp — over ONE page-length ramp it is a dark blotch that lifts
+   at every boundary, which is exactly the seam the single ramp is there to get
+   rid of. The page's colour is now simply the page's colour, and what arrives
+   on it is all this stages. */
 .products,
 .ground,
 .lineup,
@@ -3007,55 +3137,133 @@ html[data-custom-cursor] * {
   isolation: isolate;
 }
 
-.products::before,
-.ground::before,
-.lineup::before,
-.footer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: var(--c-ink);
-  /* Drawn by the scroll — `useReveal` writes this every frame of the section's
-     approach. No transition: a transition on top of a scrub is two curves
-     fighting, and the scrub already carries its own smoothing. */
-  opacity: var(--field, 1);
-  pointer-events: none;
+/* Everything that is not the background, held back until the section is
+   properly on its way in.
+
+   The pieces arrive one after another, not as one slab. This used to lift each
+   section's whole content box — the entire catalogue, the entire claim and
+   collage — on a single 18px transition, which is a box moving, not a section
+   arriving: nothing inside it had an order, so there was nothing to read.
+   Staggered, the eye is given somewhere to start and a direction to travel.
+
+   All of it is CSS transitions on the `data-shown` flag `useReveal` already
+   sets, and every delay is a `--in` on the element itself. No timeline, no
+   second observer, and one property to change when a stagger needs retiming.
+   Nothing here runs longer than ~1.2s end to end: a reveal the reader has to
+   wait out is a reveal that gets scrolled past. */
+
+/* -- the pieces rise ------------------------------------------------------ */
+
+/* The footer board is deliberately not in this list: it is the one section
+   whose contents have a running order of their own — see "how the board
+   arrives" above — so lifting the whole board as a slab as well would move it
+   twice. */
+.pcard,
+.ground__deck,
+.ground__copy,
+.lineup__scatter {
+  opacity: 0;
+  translate: 0 26px;
+  transition:
+    opacity 620ms ease-out,
+    translate 760ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--in, 0ms);
 }
 
-/* What stands on the field. Everything that is not the background, held back
-   until the field has had its beat. */
-.products__stage,
-.ground__inner,
-.lineup__list,
-.lineup__scatter,
-.footer__board {
+/* The props centre themselves ON `translate` — see `.products__prop` — so this
+   is the one piece that cannot borrow that property to arrive on, and fades
+   instead. They come in behind the cards they float over. */
+.products__prop {
   opacity: 0;
-  translate: 0 18px;
-  transition:
-    opacity 700ms ease-out,
-    translate 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 700ms ease-out var(--in, 0ms);
 }
 
 :is(.products, .ground, .lineup, .footer)[data-shown]
   :is(
-    .products__stage,
-    .ground__inner,
-    .lineup__list,
-    .lineup__scatter,
-    .footer__board
+    .pcard,
+    .products__prop,
+    .ground__deck,
+    .ground__copy,
+    .lineup__scatter
   ) {
   opacity: 1;
   translate: 0 0;
 }
 
+/* -- the headings wipe up ------------------------------------------------- */
+
+/* Each line is masked to nothing and grows back to full height as it rises, so
+   the type reads as being uncovered rather than faded in. The inset bleeds past
+   the box on three sides: these faces are italic and the overhang would
+   otherwise be shaved off at rest, which is a hairline crop nobody can name but
+   everybody sees. */
+.ground__line,
+.lineup__title {
+  opacity: 0;
+  translate: 0 0.42em;
+  clip-path: inset(-22% -8% 100% -8%);
+  transition:
+    opacity 520ms ease-out,
+    translate 840ms cubic-bezier(0.16, 1, 0.3, 1),
+    clip-path 840ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--in, 0ms);
+}
+
+:is(.ground, .lineup)[data-shown] :is(.ground__line, .lineup__title) {
+  opacity: 1;
+  translate: 0 0;
+  clip-path: inset(-22% -8% -22% -8%);
+}
+
+/* -- the stagger ---------------------------------------------------------- */
+
+/* The claim leads, the collage comes up under it, and the copy that explains
+   the collage lands last — which is the order the section reads in. */
+.ground__line:nth-child(1) { --in: 0ms; }
+.ground__line:nth-child(2) { --in: 70ms; }
+.ground__line:nth-child(3) { --in: 140ms; }
+.ground__line:nth-child(4) { --in: 210ms; }
+.ground__line:nth-child(5) { --in: 280ms; }
+.ground__line:nth-child(6) { --in: 350ms; }
+.ground__deck { --in: 180ms; }
+.ground__copy { --in: 430ms; }
+
+/* Reading order across the grid, then the balls that float over it. */
+.pcard:nth-child(1) { --in: 0ms; }
+.pcard:nth-child(2) { --in: 65ms; }
+.pcard:nth-child(3) { --in: 130ms; }
+.pcard:nth-child(4) { --in: 195ms; }
+.pcard:nth-child(5) { --in: 260ms; }
+.pcard:nth-child(6) { --in: 325ms; }
+.products__prop[data-prop='football'] { --in: 380ms; }
+.products__prop[data-prop='cricketball'] { --in: 450ms; }
+.products__prop[data-prop='shuttle'] { --in: 520ms; }
+.products__prop[data-prop='tennisball'] { --in: 590ms; }
+
+/* Down the list, then the odds and ends behind it. */
+.lineup__item:nth-child(1) .lineup__title { --in: 0ms; }
+.lineup__item:nth-child(2) .lineup__title { --in: 80ms; }
+.lineup__item:nth-child(3) .lineup__title { --in: 160ms; }
+.lineup__item:nth-child(4) .lineup__title { --in: 240ms; }
+.lineup__item:nth-child(5) .lineup__title { --in: 320ms; }
+.lineup__scatter[data-scatter='helmet'] { --in: 300ms; }
+.lineup__scatter[data-scatter='ball'] { --in: 390ms; }
+.lineup__scatter[data-scatter='racket'] { --in: 480ms; }
+.lineup__scatter[data-scatter='shuttle'] { --in: 570ms; }
+
 @media (prefers-reduced-motion: reduce) {
-  .products__stage,
-  .ground__inner,
-  .lineup__list,
-  .lineup__scatter,
-  .footer__board {
+  /* The stagger goes with the movement: a reader who has asked for less motion
+     does not want the page arriving in eleven instalments either. */
+  .pcard,
+  .products__prop,
+  .ground__deck,
+  .ground__copy,
+  .ground__line,
+  .lineup__title,
+  .lineup__scatter {
+    --in: 0ms;
     translate: none;
+    clip-path: none;
     transition: opacity 200ms ease;
   }
 }

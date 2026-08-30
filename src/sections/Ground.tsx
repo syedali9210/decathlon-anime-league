@@ -54,12 +54,15 @@ import { animateGround } from './groundMotion'
  * The campaign's own words. Real copy, not artwork — it is the only prose in
  * this section, so it is a plain paragraph and stays in the accessibility tree.
  */
-const COPY =
-  'Anime and sports share the same beating heart: the thrilling journey of ' +
-  'pushing past your limits to unleash an unbelievable, game-changing power. ' +
-  'We bring that shonen energy to the field, because every athlete is the main ' +
-  'character of their own story, and every match is your chance to pull off ' +
-  'the impossible.'
+const COPY = (
+  <>
+    Anime and sports share the same beating heart: the thrilling journey of
+    pushing past your limits to unleash an unbelievable, game-changing power. We
+    bring that shonen energy to the field, because{' '}
+    <em>every athlete is the main character of their own story</em>, and every
+    match is your chance to pull off the impossible.
+  </>
+)
 
 const CLAIM = [
   'From the',
@@ -175,8 +178,14 @@ const CHARACTERS: Character[] = [
   },
 ]
 
-/** Seconds a character holds before the collage turns over. */
-const HOLD = 4.5
+/** Seconds a character holds before the collage turns over.
+ *
+ * 2.6, not 4.5. Four characters at four and a half seconds is nineteen seconds
+ * to see the collection through, and most readers are past the section before
+ * the third one arrives — which is the whole point of the swap. Retimed with
+ * `.ground__slide`'s transition and `FADE` in groundMotion.ts; the three are
+ * one beat and move together. */
+const HOLD = 2.6
 
 // Namespaced once at module load: the boards came out of one export session and
 // share generated def names, so two of them inlined into the same document

@@ -1,152 +1,307 @@
-import grid from '../assets/footer/grid.svg'
-import gridSm from '../assets/footer/grid-sm.svg'
-import line from '../assets/footer/line.svg'
-import speck from '../assets/footer/speck.svg'
+import { useEffect, useRef } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import field from '../assets/footer/field.svg'
+import gridSvg from '../assets/footer/grid.svg?raw'
+import ticket from '../assets/footer/ticket.svg'
+import ticketInner from '../assets/footer/ticket-inner.svg'
+import ticketDot from '../assets/footer/ticket-dot.svg'
+import burst from '../assets/footer/burst.svg'
 import emblem from '../assets/footer/emblem.svg'
-import plaque from '../assets/footer/plaque.svg'
-import plaqueSm from '../assets/footer/plaque-sm.svg'
-import arch from '../assets/footer/arch.svg'
-import archEmpty from '../assets/footer/arch-empty.svg'
-import oval from '../assets/footer/oval.svg'
 import racket from '../assets/footer/racket.webp'
-import artist from '../assets/footer/artist.webp'
-import decathlon from '../assets/footer/decathlon.svg'
-import decathlonInk from '../assets/footer/decathlon-ink.svg'
-import starA from '../assets/footer/star-a.svg'
-import starB from '../assets/footer/star-b.svg'
-import starC from '../assets/footer/star-c.svg'
+import cricketball from '../assets/footer/cricketball.svg'
+import cricketballSeam from '../assets/footer/cricketball-seam.svg'
+import shuttle from '../assets/footer/shuttle.svg'
+import football from '../assets/footer/football.svg'
+import lockup from '../assets/footer/lockup.svg'
+
+gsap.registerPlugin(ScrollTrigger)
 
 /**
- * Figma 325-80. A 1596x804 board: a violet field ruled into a grid, the league
- * emblem in the middle of it, and a handful of pieces pinned around — stars, a
- * plaque, an arched window onto a player, a bat and racket, and the credit card
- * for the collaboration.
+ * Figma 343-882 ("Desktop - 2"), which replaces the violet 325-80 board this
+ * section used to carry.
+ *
+ * A 1440x689 artboard on pale pink: a tomato field with a wavy edge top and
+ * bottom, ruled into a black grid, the league emblem in the middle of it, four
+ * pieces of kit pinned around, a ticket and a starburst that carry words — and
+ * under all of it, the collaboration lockup running the full width.
  *
  * Positions are percentages of the board, as everywhere else on this site, so
- * one set of numbers holds at every width the board is shown at — but only
- * within one board. There are two: the wide one above, and Figma 328-404, a
- * 402x860 portrait board with its own arrangement, its own grid and a shorter
- * arch with nobody in it. Between them, from 900 down to 560, is a width
- * neither was drawn for, and that band reflows to a wrapped row. All three are
- * in the stylesheet.
+ * one set of numbers holds at every width the board is shown at.
  *
- * The pieces the two boards do not share are swapped by <picture>, not by two
- * elements and `display: none` — a hidden <img> is still fetched, and the wide
- * arch is 252kB of traced player that a phone should never download.
+ * The rotated pieces are placed by their UNROTATED top-left and turned about
+ * their own centre, which is not the number Figma reports. Figma gives the
+ * axis-aligned bounding box of the turned artwork, and for the racket at -55deg
+ * that box is 150x162 where the art is 135x90 — place by the box and the piece
+ * lands in the wrong spot and at the wrong size. Each `x`/`y`/`w` below is the
+ * art's own, recovered from the box: the box's centre is the art's centre, and
+ * the art's size is what the box's own numbers resolve to once the turn is
+ * taken back out.
  *
- * The grid ITSELF carries the gaps the emblem sits in: the two middle verticals
- * stop at 235 and pick up again at 585, and the horizontal at 399 is a separate
- * piece that resumes to the right of it. That is the board's own drawing, not
- * something to reproduce with a mask.
+ * Every piece sits in a `.footer__pin` whose only job is position, with the
+ * artwork inside it. That split is what lets the scroll drift below own the
+ * wrapper's `transform` outright while the artwork keeps its own `rotate` and
+ * the section reveal keeps its own `translate` — three owners, three
+ * properties, nothing to arbitrate. Put the drift on a turned piece directly
+ * and it travels along the piece's OWN axis rather than the screen's, which on
+ * a racket lying at -55deg is a diagonal nobody asked for.
  */
 
-/** A star: the artwork, where its CENTRE sits, and how wide it is. */
-const STARS = [
-  { id: 'a1', src: starA, x: 13.22, y: 14.18, w: 3.13 },
-  { id: 'b1', src: starB, x: 18.52, y: 17.6, w: 1.79 },
-  { id: 'b2', src: starB, x: 58.36, y: 10.51, w: 1.79 },
-  { id: 'c1', src: starC, x: 64.93, y: 12.59, w: 2.47 },
-  { id: 'a2', src: starA, x: 64.21, y: 26.59, w: 3.13 },
-]
+/** A pinned piece: artwork, its unrotated top-left, its width, and its turn. */
+const PIECES = [
+  { id: 'racket', src: racket, x: 21.73, y: 8.72, w: 9.37, r: -55.39 },
+  // Two exports, one ball: the board draws the shell and its seam as separate
+  // pieces and they are all but concentric. Kept apart rather than merged,
+  // because merging them is a guess about paint order nothing here can check —
+  // so they take the SAME drift below, or the seam slides off its own ball.
+  { id: 'cricketball', src: cricketball, x: 73.61, y: 16.11, w: 6.27 },
+  { id: 'cricketball-seam', src: cricketballSeam, x: 73.68, y: 16.31, w: 6.07 },
+  // The board mirrors this one rather than turning it — its own x is the RIGHT
+  // edge on the artboard, which is why the number here is not Figma's.
+  { id: 'shuttle', src: shuttle, x: 90.63, y: 25.25, w: 5.2, flip: true },
+  { id: 'football', src: football, x: 16.22, y: 38.42, w: 8.11, r: -82.45 },
+] as const
+
+/**
+ * How far each piece of kit lags or leads the page, as a share of the scroll
+ * the footer takes to cross the window. Signed: negative rides up against the
+ * scroll, positive trails it.
+ *
+ * The KIT drifts and the stickers do not, which is the board's own logic rather
+ * than a shortcut: the ticket and the starburst are stuck to the field and
+ * should travel with its ruling, while the ball and the racket are lying over
+ * it. Splitting them that way also means the two ticket vectors and their two
+ * lines of type never have to be kept in step with one another.
+ *
+ * Small shares. The footer is 689 units tall against sections more than twice
+ * that, so the number that reads as a lazy drift on the line-up is a lurch
+ * here.
+ */
+const DRIFT: Record<string, number> = {
+  racket: -0.05,
+  cricketball: 0.04,
+  'cricketball-seam': 0.04,
+  shuttle: -0.055,
+  football: 0.045,
+}
 
 const place = (x: number, y: number, w: number) =>
   ({ '--x': `${x}%`, '--y': `${y}%`, '--w': `${w}%` }) as React.CSSProperties
 
-export function Footer() {
+const turn = (r?: number) =>
+  (r ? { '--r': `${r}deg` } : undefined) as React.CSSProperties | undefined
+
+/**
+ * A piece that is words rather than artwork.
+ *
+ * These are set live rather than baked into the sticker they sit on: they are
+ * type, the page already loads the face the board names, and a phone renders
+ * eleven-point type far better than it resamples a picture of it.
+ *
+ * Figma centres the turned text in its bounding box, so this places the box and
+ * lets the type turn inside it — the same box-and-centre the artwork above
+ * recovers by hand, except here the box is worth keeping, because the text's
+ * own size is the browser's to decide and not the board's.
+ */
+const label = (x: number, y: number, w: number, h: number, r: number) =>
+  ({
+    '--x': `${x}%`,
+    '--y': `${y}%`,
+    '--w': `${w}%`,
+    '--h': `${h}%`,
+    '--r': `${r}deg`,
+  }) as React.CSSProperties
+
+/**
+ * The ruling, in the DOM rather than behind an <img>, so its sixteen lines can
+ * draw themselves on.
+ *
+ * `pathLength="1"` is the whole trick. The lines are three different real
+ * lengths — 381 for most verticals, 388 for the one that runs to the foot, 1440
+ * for the horizontals — and normalising every one to a length of 1 lets a
+ * single `stroke-dasharray: 1; stroke-dashoffset: 1 -> 0` rule in the
+ * stylesheet draw all sixteen correctly. Without it each line needs its own
+ * dash figure, measured, and re-measured whenever the board is re-exported.
+ *
+ * The direction falls out of the path data for free: the verticals are written
+ * `M44 3v381` so they draw downward, the horizontals `M0 77h1440` so they draw
+ * out to the right.
+ */
+function useGrid(host: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const el = host.current
+    if (!el || el.firstChild) return
+    el.innerHTML = gridSvg
+    const svg = el.querySelector('svg')
+    if (!svg) return
+    svg.removeAttribute('width')
+    svg.removeAttribute('height')
+    for (const p of svg.querySelectorAll('path')) p.setAttribute('pathLength', '1')
+  }, [host])
+}
+
+/** The kit slides against the ruling over the footer's own pass. */
+function useKitDrift(section: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const el = section.current
+    if (!el) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const pass = () => el.offsetHeight + window.innerHeight
+    const tweens = Object.entries(DRIFT).flatMap(([id, share]) => {
+      const pin = el.querySelector<HTMLElement>(`.footer__pin[data-piece="${id}"]`)
+      if (!pin) return []
+      // Split either side of where the stylesheet puts it, so the excursion is
+      // centred on the board's own position instead of running away from it.
+      const half = () => (share * pass()) / 2
+      return [
+        gsap.fromTo(
+          pin,
+          { y: () => -half() },
+          {
+            y: () => half(),
+            ease: 'none',
+            scrollTrigger: {
+              trigger: el,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          },
+        ),
+      ]
+    })
+
+    return () =>
+      tweens.forEach((t) => {
+        t.scrollTrigger?.kill()
+        t.kill()
+      })
+  }, [section])
+}
+
+/** Position outside, artwork inside — see the note at the top of the file. */
+function Pin({
+  id,
+  src,
+  x,
+  y,
+  w,
+  r,
+  flip,
+  alt,
+}: {
+  id: string
+  src: string
+  x: number
+  y: number
+  w: number
+  r?: number
+  flip?: boolean
+  alt?: string
+}) {
   return (
-    <footer className="footer">
+    <div className="footer__pin" data-piece={id} style={place(x, y, w)}>
+      <img
+        className="footer__piece"
+        style={turn(r)}
+        data-flip={flip || undefined}
+        src={src}
+        alt={alt ?? ''}
+        aria-hidden={alt ? undefined : true}
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+  )
+}
+
+export function Footer() {
+  const section = useRef<HTMLElement>(null)
+  const grid = useRef<HTMLDivElement>(null)
+  useGrid(grid)
+  useKitDrift(section)
+
+  return (
+    <footer className="footer" ref={section}>
       <div className="footer__board">
-        {/* The ruling. `preserveAspectRatio="none"` in the file, and each board
-            holds its own artboard's ratio, so it lands on its own lines. The
-            portrait board rules itself differently — closer spacing, its own
-            crop — so it carries its own file rather than a squashed copy. */}
-        <picture className="footer__grid">
-          <source media="(max-width: 560px)" srcSet={gridSm} />
-          <img src={grid} alt="" aria-hidden="true" />
-        </picture>
-        <img
-          className="footer__piece footer__line"
-          style={place(63.72, 49.63, 36.28)}
-          src={line}
-          alt=""
-          aria-hidden="true"
-        />
+        {/* The field and its ruling are two files at the same origin: the field
+            carries the wavy edge top and bottom, the grid is drawn 13 units
+            shorter so its lines stop inside the wave rather than crossing it. */}
+        <img className="footer__field" src={field} alt="" aria-hidden="true" />
+        <div className="footer__grid" aria-hidden="true" ref={grid} />
 
-        {STARS.map((s) => (
-          <img
-            key={s.id}
-            className="footer__piece footer__star"
-            style={place(s.x, s.y, s.w)}
-            src={s.src}
-            alt=""
-            aria-hidden="true"
-          />
-        ))}
-        <img
-          className="footer__piece footer__speck"
-          style={place(61.65, 17.79, 0.19)}
-          src={speck}
-          alt=""
-          aria-hidden="true"
-        />
+        {/* The ticket. Shape, inner rule, punch-hole and two lines of type. */}
+        <Pin id="ticket" src={ticket} x={4.24} y={22.64} w={10.05} />
+        <Pin id="ticket-inner" src={ticketInner} x={4.93} y={23.66} w={8.54} />
+        <Pin id="ticket-dot" src={ticketDot} x={11.25} y={25.54} w={1.11} />
+        {/* Two boxes rather than one two-line block: the board turns the lines
+            by different amounts, which is what stops the sticker reading as a
+            label printed straight. */}
+        <p
+          className="footer__label"
+          data-label="choose"
+          style={label(5.9, 24.82, 4.71, 5.62, -9.05)}
+        >
+          <span>Choose</span>
+        </p>
+        <p
+          className="footer__label"
+          data-label="league"
+          style={label(5.28, 28.45, 7.86, 6.59, -8.77)}
+        >
+          <span>
+            Your <em>League</em>
+          </span>
+        </p>
 
-        {/* Very slightly squarer on the portrait board — 99x97 against
-            161x165 — and the height follows whichever file loaded. */}
-        <picture className="footer__piece footer__plaque" style={place(13.22, 29.1, 10.09)}>
-          <source media="(max-width: 560px)" srcSet={plaqueSm} />
-          <img src={plaque} alt="" aria-hidden="true" />
-        </picture>
+        {/* The starburst, and the only other words on the field. */}
+        <Pin id="burst" src={burst} x={82.36} y={35.27} w={7.36} />
+        <p
+          className="footer__label footer__label--burst"
+          data-label="burst"
+          style={label(83.26, 37.3, 5.51, 11.39, 26.09)}
+        >
+          <span>
+            special
+            <br />
+            edition
+          </span>
+        </p>
 
-        {/* The one piece here that carries words, so it is the one with a name. */}
-        <img
-          className="footer__piece footer__emblem"
-          style={place(38.91, 32.59, 19.42)}
+        {/* The one piece here that carries the campaign's name, so it is the
+            one with an alt rather than an aria-hidden. */}
+        <Pin
+          id="emblem"
           src={emblem}
+          x={40}
+          y={11.18}
+          w={19.93}
           alt="Anime Sports League"
         />
-        {/* The portrait board puts the lockup inside the emblem, in ink rather
-            than the white the credit card's copy of it is drawn in. Off the
-            wide board entirely, which is why it is hidden rather than moved. */}
-        <img
-          className="footer__piece footer__lockup"
-          src={decathlonInk}
-          alt="Decathlon"
-        />
 
-        {/* Shorter on the portrait board, and with nobody in it. */}
-        <picture className="footer__piece footer__arch" style={place(83.46, 29.23, 9.77)}>
-          <source media="(max-width: 560px)" srcSet={archEmpty} />
-          <img src={arch} alt="" aria-hidden="true" />
-        </picture>
+        {PIECES.map((p) => (
+          <Pin
+            key={p.id}
+            id={p.id}
+            src={p.src}
+            x={p.x}
+            y={p.y}
+            w={p.w}
+            r={'r' in p ? p.r : undefined}
+            flip={'flip' in p ? p.flip : undefined}
+          />
+        ))}
 
-        {/* Bat and racket share a box the board clips them to — the racket is
-            drawn wider than the box and hangs off its left edge. */}
-        <div
-          className="footer__piece footer__kit"
-          style={place(65.16, 74.75, 7.46)}
-          aria-hidden="true"
-        >
-          <img className="footer__oval" src={oval} alt="" />
-          <img className="footer__racket" src={racket} alt="" />
-        </div>
-
-        <div className="footer__credit" style={place(13.22, 72.76, 10.15)}>
-          {/* The board's own inner column, and the reason it is kept: a
-              container does not answer its own queries, so the card's padding
-              has to sit on something INSIDE the card to be measured in card
-              units. On the card itself it resolved against the board. */}
-          <div className="footer__credit-inner">
-            <img className="footer__artist" src={artist} alt="" aria-hidden="true" />
-            <div className="footer__names">
-            {/* The lockup as drawn; the wordmark is wider than the photo above
-                it and overhangs the card's own side padding, which is the
-                board's arrangement. */}
-              <img className="footer__wordmark" src={decathlon} alt="Decathlon" />
-              <span className="footer__x">X</span>
-              <span className="footer__artist-name">Jolly Yun Shann</span>
-            </div>
-          </div>
-        </div>
+        {/* Under the field, on the board's own pink. The wordmark is artwork and
+            the two names are type, which is the board's own split — and it reads
+            as one line either way: "Decathlon X Jolly Yun Shann". */}
+        <p className="footer__credit">
+          <img className="footer__lockup" src={lockup} alt="Decathlon" />
+          <span className="footer__x">X</span>
+          <span className="footer__artist-name">Jolly Yun Shann</span>
+        </p>
       </div>
     </footer>
   )

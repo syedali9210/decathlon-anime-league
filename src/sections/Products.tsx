@@ -129,12 +129,19 @@ export function Products() {
                   {/* The full catalogue name: the collection, then the tee.
                       Two lines on a full-size card, which is what `pcard__id`
                       being a column and `pcard__name` wrapping are already for. */}
-                  {/* A non-breaking space before the dash, so where the name
-                      wraps on a phone it breaks AFTER it — "Anime Sports
-                      League -" over "Cap Black", rather than a line starting
-                      with a stray hyphen. */}
+                  {/* The collection is its own span so a phone card can drop
+                      it — see the container query in the stylesheet. It is the
+                      same four words under all six cards, in a section that has
+                      already said them, and losing it is what lets the name and
+                      the price share one line inside the plate instead of being
+                      pushed out from under the card.
+                      The non-breaking space keeps the dash with the collection
+                      wherever the full name does wrap. */}
                   <span className="pcard__name">
-                    Anime Sports League&nbsp;- {p.name} Black
+                    <span className="pcard__collection">
+                      {'Anime Sports League - '}
+                    </span>
+                    {p.name} Black
                   </span>
                   <span className="pcard__price">₹ {p.price}</span>
                 </div>

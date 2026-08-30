@@ -484,10 +484,10 @@ export function animateGround(root: HTMLElement): () => void {
    *
    * The one on its way out keeps turning until its fade has finished — a still
    * frame sliding to transparent reads as a hitch, and the fade is the only
-   * moment a paused collage is still on screen. `.ground__slide`'s own 700ms,
+   * moment a paused collage is still on screen. `.ground__slide`'s own 420ms,
    * so the two stay in step if that is ever retimed.
    */
-  const FADE = 700
+  const FADE = 420
   const slide = root.closest('.ground__slide')
   let onScreen = false
   let hold = 0
