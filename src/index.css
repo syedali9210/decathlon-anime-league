@@ -76,20 +76,39 @@
   --band: clamp(14px, 1.6vw, 28px);
   --band-outer: calc(var(--band) * 5 / 24);
   --band-check: calc(var(--band) * 14 / 24);
-  /* The board's checker is not square, and not the same on both axes: 10.46
-     wide on the horizontal runs, 4.31 on the vertical ones. The designer fitted
-     the same 137 tiles to both edges, so the side runs read as fine stripes
-     against the top and bottom's squares. Kept — it is what the board shows. */
-  --band-dash: calc(var(--band) * 10.4598 / 24);
-  --band-dash-y: calc(var(--band) * 4.31386 / 24);
+  /* One tile for the whole belt.
+     The board draws the top and bottom runs at 10.4598 units against the sides'
+     4.31386, because the designer fitted the same 137 tiles to edges of very
+     different lengths. That number describes the ARTBOARD's proportions, and
+     this frame is sized to the viewport instead — so the two sizes stopped
+     meaning "137 tiles either way" and became simply two different belts
+     meeting at the medallion, the top one twice as coarse as the ring and the
+     elbow it hands over to. The sides' tile is the one the rest of the belt
+     already runs on, both curves included, so it is the one that stays. */
+  --band-dash: calc(var(--band) * 4.31386 / 24);
   /* The corner medallion and the hooked elbow below it, as one tile. */
   --corner-w: calc(var(--band) * 116 / 24);
   --corner-h: calc(var(--band) * 180 / 24);
+  /* Where the top and bottom runs stop: on the medallion's own edge.
+     Inset by the corner tile's full 116 they stopped a long way short of it,
+     and the corner artwork draws that stretch as solid gold — so the belt went
+     missing for about a quarter of the tile at every corner. The disc is
+     r=56.5 about (57, 57) and the rail's checker occupies y 5..19, so the disc
+     is at its narrowest across the band at the top edge: 57 + sqrt(57.5² - 52²)
+     = 81.5. Starting at 82 the run is inside the disc all the way across the
+     band, which is what lets the mask below cut it to the curve. */
+  --corner-lead: var(--corner-w);
+  /* The medallion, as the mask punches it: the gold disc plus its outline. */
+  --disc-r: calc(var(--band) * 57.5 / 24);
 
   /* One magenta + one blue tile: the checker's repeat period, and so the
      distance the band travels per loop. */
   --frame-pitch: calc(var(--band-dash) * 2);
-  --frame-speed: 1.6s;
+  /* Per TILE, so it came down with the tile: 1.6s carried a 10.4598 one, 0.66s
+     carries a 4.31386 one at the same 13 units a second. That speed is what
+     makes four runs and two curves read as one belt rather than six
+     animations, and it is unchanged. */
+  --frame-speed: 0.66s;
 
   /* How far a layer at depth 1 travels across the full pointer sweep. */
   --sweep-x: 2.6%;
@@ -138,9 +157,15 @@ body::-webkit-scrollbar {
    for, which is `height - 100svh`. At 240svh that is 140svh of pinned scroll for
    the scroll-out; the last 100svh is the hero sliding away to reveal what
    follows. Anything scheduled past --sy 1 would play off-screen. */
+/* 240 was a screen and a half of scroll spent on the scene leaving. The hero is
+   sticky for the first 140 of it and then slides off over the last 100, and for
+   most of that slide the screen below it is empty — the episode relay does not
+   begin until the runway's top reaches the top of the window, so the reader got
+   a long stretch of nothing between the two sections. Shorter here, and the
+   relay now starts while the hero is still on its way out; see Episodes.tsx. */
 .hero-runway {
   position: relative;
-  height: 240svh;
+  height: 180svh;
 }
 
 .hero {
@@ -201,10 +226,29 @@ body::-webkit-scrollbar {
   width: max(100cqw, calc(100cqh * 1495 / 903));
   height: max(100cqh, calc(100cqw * 903 / 1495));
   /* Anchored to the baseline, not the centre: the ribbon and foliage along the
-     bottom edge are composition, the sky above is not, so every crop — the
-     cover overflow and the overscan alike — is taken off the top. The 0.6%
-     bleed is headroom for the pointer sweep nudging the court upward. */
-  transform: translate(-50%, 0.6%) scale(var(--overscan));
+     bottom edge are composition, the sky above is not, so the crop is taken off
+     the top. The 0.6% bleed is headroom for the pointer sweep nudging the court
+     upward.
+     Off the top ONLY UP TO A POINT, though. How much cover has to crop depends
+     entirely on the window's shape: at 1440x820 it is 65px and the sky can
+     absorb all of it, but at 1920x900 it is 283 and taking that off the top put
+     the league medallion — the banner's own title — 84px above the frame and
+     cut it in half. So a share of the overflow is handed back to the bottom,
+     which is what `--art-drop` pushes down by. Capped, because past that the
+     ribbon starts to go and the ribbon is the thing the baseline anchor exists
+     to protect. Measured, that is a long way off: the medallion and the ribbon
+     are the same layer, and its foot still clears the frame by 283px at
+     1920x900 and 422 at 2560x1080, so there is room to hand back more than the
+     top can spare. */
+  --art-cover: max(100cqh, calc(100cqw * 903 / 1495));
+  --art-over: max(0px, calc(var(--art-cover) * var(--overscan) - 100cqh));
+  --art-drop: min(calc(var(--art-over) * 0.62), 300px);
+  transform: translate(-50%, calc(0.6% + var(--art-drop))) scale(var(--overscan));
+  /* So the words printed on the medallion can be sized against the ARTWORK.
+     `.hero__stage` is a container too, but it is the window's box — the art is
+     bigger than it by the cover and the overscan, and type keyed to the window
+     would drift off the plate it is printed on as the aspect changed. */
+  container-type: inline-size;
   transform-origin: 50% 100%;
   animation: art-in 1200ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
@@ -316,6 +360,23 @@ body::-webkit-scrollbar {
   display: block;
   pointer-events: auto;
   border-radius: 6px;
+}
+
+/* Figma 238-156454, printed on the medallion: Barlow Condensed Medium in the
+   board's magenta, which is a colour for cream and not for the night sky the
+   rest of this scene is. Sized in `cqw` of the artwork — 14 of the artboard's
+   1495 — so it holds its place on the plate at every window shape. */
+.layer__caption {
+  position: absolute;
+  margin: 0;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: clamp(6px, 0.86cqw, 14px);
+  line-height: 1.35;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--c-magenta);
+  pointer-events: none;
 }
 
 .layer__link:focus-visible {
@@ -433,8 +494,9 @@ body::-webkit-scrollbar {
   /* Wide enough to hold "Welcome to the anime world" on two lines, as the board
      has it, now that the font is capped by height and so runs smaller. */
   max-width: min(78%, 1100px);
-  font-family: 'Roboto Flex', system-ui, sans-serif;
-  font-weight: 800;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 600;
+  font-style: italic;
   font-size: clamp(1.5rem, min(6.5vw, 9svh), 5.5rem);
   line-height: 1;
   text-align: center;
@@ -541,29 +603,52 @@ body::-webkit-scrollbar {
   }
 }
 
+/* The site's own button, which is the pill under every episode card: pink,
+   a hard 2px black rule, black ink, and a black shadow offset with no blur —
+   a flat comic offset, not a soft drop. These were a translucent grey circle
+   with a hairline white border, which belongs to no part of this page. */
 .episodes__arrow {
   width: 44px;
   height: 44px;
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid rgb(255 255 255 / 0.5);
+  border: 2px solid #000;
   border-radius: 50%;
-  background: rgb(0 0 0 / 0.35);
-  color: #fff;
+  background: var(--c-pink);
+  color: #000;
   cursor: pointer;
+  filter: drop-shadow(-2px 2px 0 #000);
   transition:
     opacity 200ms ease,
-    background-color 160ms ease;
+    transform 160ms ease-out,
+    background-color 160ms ease-out;
 }
 
+/* Still a button, just not one you can press — so it keeps its rule and loses
+   the shadow, rather than fading out to a ghost of itself. */
 .episodes__arrow:disabled {
-  opacity: 0.25;
+  opacity: 0.45;
+  filter: none;
   cursor: default;
 }
 
+/* The same press the shop pill takes. */
 .episodes__arrow:not(:disabled):active {
-  background: var(--c-pink);
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .episodes__arrow:not(:disabled):hover {
+    background: var(--c-gold);
+  }
+}
+
+/* White, like the pill's — the section behind it is dark, and the button is
+   already pink. */
+.episodes__arrow:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
 }
 
 .episodes__arrow svg {
@@ -591,22 +676,35 @@ body::-webkit-scrollbar {
 
 /* The two copy lines under the headline, and the rule the board puts between
    them and the deck. */
+/* Figma 239-156472: two lines, caps, white, 24 on the board's 1596, with a
+   12px gap between them and YOU in #ff398e. A flex column rather than a rule
+   break, because the board sets them as two blocks with a gap.
+
+   The board names Sora SemiBold. Set here in the face this section is set in —
+   see the note on `.ground__title` — rather than pulling a third family onto
+   the page for one paragraph. */
 .episodes__sub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5em;
   margin: 0;
   text-align: center;
-  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
   font-weight: 600;
-  font-size: clamp(0.72rem, 1.15vw, 1rem);
-  letter-spacing: 0.08em;
-  line-height: 1.7;
+  font-style: italic;
+  font-size: clamp(14px, 1.5vw, 24px);
+  line-height: 1;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #fff;
 }
 
 .episodes__sub em {
-  font-style: normal;
-  color: var(--c-pink);
+  font-style: inherit;
+  color: #ff398e;
 }
+
 
 /* ── the intro relay ─────────────────────────────────────────────────────── */
 
@@ -629,8 +727,9 @@ body::-webkit-scrollbar {
 .episodes__slide {
   grid-area: 1 / 1;
   margin: 0;
-  font-family: 'Roboto Flex', system-ui, sans-serif;
-  font-weight: 800;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 600;
+  font-style: italic;
   /* Smaller than the headline it follows, so the claims read as its answer
      rather than as five headlines in a row. */
   font-size: clamp(1.4rem, min(5.2vw, 7svh), 3.6rem);
@@ -661,8 +760,9 @@ body::-webkit-scrollbar {
   display: flex;
   align-items: center;
   gap: clamp(10px, 1.6vw, 24px);
-  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
   font-weight: 600;
+  font-style: italic;
   font-size: clamp(0.72rem, 1.1vw, 0.95rem);
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -975,13 +1075,10 @@ body::-webkit-scrollbar {
    scales from the column width alone. */
 .pcard {
   position: relative;
-  aspect-ratio: 425 / 723;
   /* The episode deck's SHOP links land on these; without the margin the card
      arrives flush against the top of the window with its own section's padding
      scrolled past. */
   scroll-margin-block: clamp(24px, 10vh, 120px);
-  border-radius: 5.53%/3.25%; /* 23.5 of 425 and of 723 */
-  background: #000;
   /* Everything else in this card is a percentage of the card; the type was the
      one exception, keyed to the viewport. That broke every time the grid
      reflowed — two-up on a tablet makes the card BIGGER than three-up on a
@@ -989,6 +1086,19 @@ body::-webkit-scrollbar {
      made 12px type on a 165px card that fell out of its own plate. Container
      units tie the type to the card like everything else. */
   container-type: inline-size;
+}
+
+/* The artwork's box. It carries the ratio rather than `.pcard` doing it, so the
+   meta can leave it and become a caption the grid row actually accounts for —
+   absolutely positioned it contributed nothing to the row, hung 54px past the
+   card and left 17px to the row below, which read as the price belonging to the
+   wrong card. While the meta is absolute this box IS the card's whole height,
+   so every percentage below still measures what it always did. */
+.pcard__plate {
+  position: relative;
+  aspect-ratio: 425 / 723;
+  border-radius: 5.53%/3.25%; /* 23.5 of 425 and of 723 */
+  background: #000;
 }
 
 .pcard__photo {
@@ -1145,9 +1255,14 @@ body::-webkit-scrollbar {
   --prop-phase: -1.7s;
 }
 
+/* The two on the ends sit a little further in than the board draws them: at 1%
+   and 96% they are hard against the stage with nowhere to travel, and half a
+   drift carried each of them out of the section entirely — the football over
+   the ground above it, the tennis ball over the line-up below. Moved in, they
+   keep the full differential. */
 .products__prop[data-prop='football'] {
   left: 8%;
-  top: 1%;
+  top: 7%;
   width: 15%;
 }
 .products__prop[data-prop='cricketball'] {
@@ -1162,7 +1277,7 @@ body::-webkit-scrollbar {
 }
 .products__prop[data-prop='tennisball'] {
   left: 94%;
-  top: 96%;
+  top: 90%;
   width: 20.4%;
 }
 
@@ -1171,15 +1286,53 @@ body::-webkit-scrollbar {
   .products__grid {
     grid-template-columns: repeat(2, 1fr);
     /* Two-up cards are ~1.6x wider, so the row gap tracks them to stay the same
-       share of a card's height as it is three-up. */
-    gap: 20cqw 4cqw;
+       share of a card's height as it is three-up. A little wider than that
+       ratio asks, because the meta is in the flow at this size — the gap is now
+       the whole separation between one card's price and the next card, not
+       between two plates with the captions hanging in between. */
+    gap: 24cqw 4cqw;
   }
-  /* The props are placed against a 3-up grid — that is what `left: 98%` is
-     measured on. Once the grid reflows they sit on top of the cards, and the
-     two that hang off the right edge get sliced in half by the section's clip.
-     They go with the layout they belong to. */
-  .products__prop {
-    display: none;
+  /* The props' three-up placements do not survive the reflow — `left: 98%` is
+     measured on a grid that is no longer there, and the two that hang off the
+     right edge get sliced in half by the section's clip. They used to be
+     dropped here for that reason; they are re-placed instead.
+
+     Two rows of cards means two gaps between three, and the props take those:
+     one either side of each. The gap is the only band across this layout with
+     no artwork and no caption in it, which is what keeps a ball off a face and
+     off a price. Bigger than three-up in percentage terms because the stage is
+     a third of the width — they land at roughly the same size on the glass. */
+  /* Placed off the TOP of their gap, not centred in it. A ball is taller than
+     the gap once its drift is counted, so it cannot be contained — but it only
+     has to clear the caption above it. Hanging over the card below is the same
+     thing they do three-up, and the reason they carry a z-index at all.
+     So each top is the gap's own top, plus half the ball, plus however far its
+     drift carries it UP: football and shuttle drift upward and need that margin,
+     the other two drift down and are already at their highest at rest. */
+  /* Each width is restated per prop: the three-up rules set theirs through
+     `[data-prop]`, which outranks a plain class, so a shared `width` here would
+     be ignored by whichever ones already have one — as the football was. */
+  .products__prop[data-prop='football'] {
+    left: 15%;
+    top: 33.8%;
+    width: 22%;
+  }
+  .products__prop[data-prop='shuttle'] {
+    left: 85%;
+    top: 33.5%;
+    width: 20%;
+  }
+  .products__prop[data-prop='cricketball'] {
+    left: 14%;
+    top: 70.6%;
+    width: 23%;
+  }
+  /* Pulled in from the right: at 87 the ball's edge crossed the stage and the
+     section's own `overflow-x: clip` took a slice off it. */
+  .products__prop[data-prop='tennisball'] {
+    left: 84.5%;
+    top: 68.3%;
+    width: 27%;
   }
 }
 
@@ -1195,10 +1348,52 @@ body::-webkit-scrollbar {
    two-up phone both land here; a two-up tablet, whose cards are bigger than
    either, correctly does not. */
 @container (max-width: 280px) {
+  /* Back onto the plate, and up to the top of the black band rather than into
+     the last 6.64% of it. The photo ends at 88.5%, so there are 35px of card
+     under it on a phone — enough for the label, but only if it stops being a
+     column. Stacked, the full name runs to two lines and the price sits under
+     them: 51px into a 35px band, which is what pushed it off the card.
+     Side by side the two lines are the whole of it. */
+  /* Taller than the board's 425:723. The label has to live in the black band
+     under the photo, and that band is a fixed share of the plate — the only way
+     to give it room is to give the whole card height. The chrome stretches with
+     it (it carries `preserveAspectRatio="none"` for this; the line-up sizes the
+     same file `height: auto`, so its own copy is untouched) and the photo is
+     `object-fit: cover`, so it re-crops rather than distorting. */
+  .pcard__plate {
+    aspect-ratio: 425 / 800;
+  }
+
+  /* Anchored to the card's foot rather than to the photo's edge, so the label
+     stays the same distance off the bottom whether the name takes one line or
+     two instead of hanging from the top of the band with the slack under it. */
   .pcard__meta {
-    top: 100%;
-    margin-top: 0.5em;
-    font-size: clamp(10px, 6.7cqi, 12px);
+    top: auto;
+    bottom: 3%;
+    align-items: center;
+    /* Two steps down from the plate label's size: at ~8px the two lines and the
+       price sit in the middle of the band instead of filling it corner to
+       corner. */
+    font-size: clamp(7.5px, 4.5cqi, 9.5px);
+  }
+
+  .pcard__id {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.6em;
+  }
+
+  .pcard__price {
+    white-space: nowrap;
+  }
+
+  /* The colourway dots go. On a 177px card they are two 5px circles, and the
+     28px they cost — their own width plus the gap — is the difference between
+     the name setting on two lines and on three. Three does not fit the band,
+     which is the whole reason the label was off the card to begin with. They
+     are back the moment there is a card wide enough to hold both. */
+  .pcard__swatches {
+    display: none;
   }
 }
 
@@ -1258,16 +1453,23 @@ body::-webkit-scrollbar {
   container-type: inline-size;
 }
 
+/* Barlow Condensed SemiBold Italic, which is what the second, fourth and fifth
+   sections are set in. It is a condensed face where Roboto Flex was being
+   condensed by an axis, so the claim sets narrower and its ten-line stack has
+   more room than the board's own numbers assumed.
+   Two things in these sections keep their own: the line-up's titles are
+   ExtraBold Italic and the episode sub is Medium upright, both off the board. */
 .ground__title {
   /* Down the whole left-hand side, so the right column can stack the collage
      and the copy under it without the claim's height getting between them. */
   grid-column: 1;
   grid-row: 1 / span 2;
   margin: 0;
-  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
   /* 700, not the 800 every other headline on the site uses: the board's own
      paragraphs are Bold, and at 800 the column loses a line to wrapping. */
-  font-weight: 700;
+  font-weight: 600;
+  font-style: italic;
   /* 96 of the board's 1388-wide content box. */
   font-size: clamp(28px, 6.92cqw, 96px);
   line-height: normal;
@@ -1543,8 +1745,9 @@ body::-webkit-scrollbar {
   grid-row: 2;
   max-width: 62ch;
   margin: clamp(20px, 2.6cqw, 44px) 0 0;
-  font-family: 'Roboto Flex', system-ui, sans-serif;
-  font-weight: 400;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 600;
+  font-style: italic;
   font-size: clamp(13px, 1.35cqw, 19px);
   line-height: 1.65;
   /* Black, not the claim's white: this sits at the pale end of the section's
@@ -1685,8 +1888,10 @@ body::-webkit-scrollbar {
 
 .lineup__title {
   margin: 0;
-  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
   font-weight: 800;
+  /* Figma 159-131376: the board leans it. */
+  font-style: italic;
   font-size: clamp(34px, 6vw, 96px);
   line-height: 1.18;
   text-align: center;
@@ -1740,8 +1945,9 @@ body::-webkit-scrollbar {
 
 .lineup__index {
   justify-self: start;
-  font-family: 'Roboto Flex', system-ui, sans-serif;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
   font-weight: 600;
+  font-style: italic;
   font-size: clamp(10px, 1vw, 16px);
   letter-spacing: 0.04em;
   color: #b1aebd;
@@ -1881,26 +2087,61 @@ body::-webkit-scrollbar {
   }
 }
 
+/* The horizontal runs pass OVER the corner tiles with the medallions punched
+   out of them. Under the tiles they cannot be seen at all — the artwork draws
+   its own gold across the rail's whole footprint — and stopping them short of
+   it is what left the belt broken at each corner. Masked rather than trimmed so
+   the checker meets each disc on its curve instead of on a straight edge.
+   Two circles, one per end, composited by intersection: each gradient is clear
+   inside its own disc and opaque everywhere else, so the rail survives only
+   where it is outside BOTH. */
+/* Behind `@supports` because the whole thing turns on intersecting two masks.
+   Without it the two gradients would composite by addition, which is opaque
+   almost everywhere — the runs would paint straight over both medallions. The
+   fallback is simply the frame as it was: the runs stop at the corner tile and
+   the belt has a gold link at each corner. */
+@supports (mask-composite: intersect) {
+  .frame__edge--top,
+  .frame__edge--bottom {
+    --corner-lead: calc(var(--band) * 82 / 24);
+    /* 57 across from the frame's corner, and the run starts 82 in. */
+    --disc-x1: calc(var(--band) * -25 / 24);
+    --disc-x2: calc(100% + var(--band) * 25 / 24);
+    z-index: 1;
+    mask-image:
+      radial-gradient(circle var(--disc-r) at var(--disc-x1) var(--disc-y), #0000 100%, #000 100%),
+      radial-gradient(circle var(--disc-r) at var(--disc-x2) var(--disc-y), #0000 100%, #000 100%);
+    mask-composite: intersect;
+  }
+}
+
+/* The ring and the elbow stay on top of the run they hand the belt to. */
+.frame__curve {
+  z-index: 2;
+}
+
 .frame__edge--top {
   --edge-dir: to bottom;
   --check-dir: 90deg;
+  /* 57 down from the frame's top; the run's own box starts there. */
+  --disc-y: calc(var(--band) * 57 / 24);
   --frame-run: frame-run-x;
-  inset: 0 var(--corner-w) auto var(--corner-w);
+  inset: 0 var(--corner-lead) auto var(--corner-lead);
   height: var(--band);
 }
 .frame__edge--bottom {
   --edge-dir: to top;
   --check-dir: 90deg;
+  /* 57 up from the frame's foot, and this box is the last 24 of it. */
+  --disc-y: calc(var(--band) * -33 / 24);
   --frame-run: frame-run-x;
   animation-direction: reverse;
-  inset: auto var(--corner-w) 0 var(--corner-w);
+  inset: auto var(--corner-lead) 0 var(--corner-lead);
   height: var(--band);
 }
 .frame__edge--left {
   --edge-dir: to right;
   --check-dir: 0deg;
-  --band-dash: var(--band-dash-y);
-  --frame-speed: calc(1.6s * 4.31386 / 10.4598);
   --frame-run: frame-run-y;
   animation-direction: reverse;
   inset: var(--corner-h) auto var(--corner-h) 0;
@@ -1909,8 +2150,6 @@ body::-webkit-scrollbar {
 .frame__edge--right {
   --edge-dir: to left;
   --check-dir: 0deg;
-  --band-dash: var(--band-dash-y);
-  --frame-speed: calc(1.6s * 4.31386 / 10.4598);
   --frame-run: frame-run-y;
   inset: var(--corner-h) 0 var(--corner-h) auto;
   width: var(--band);
@@ -1942,8 +2181,8 @@ body::-webkit-scrollbar {
 .frame__curve-dash {
   stroke: var(--c-magenta);
   stroke-dasharray: 4.31386 4.31386;
-  animation: frame-curve calc(var(--frame-speed) * 4.31386 / 10.4598) linear
-    infinite;
+  /* The rails' own tile now, so the rails' own duration. */
+  animation: frame-curve var(--frame-speed) linear infinite;
 }
 
 /* The medallion rim is the same belt closed into a circle — 24 static wedges
@@ -1952,10 +2191,13 @@ body::-webkit-scrollbar {
    4.31386, because a dash only meets itself cleanly if it divides the circle a
    whole number of times; 4.29052 is 0.54% off the rails and invisible, where a
    seam would not be. */
+/* 14, like the elbow and like the rails' checker — it was 15, a unit prouder
+   than everything it hands the belt to, and at the corner that reads as the
+   band swelling as it goes round. */
 .frame__ring-bed,
 .frame__ring-dash {
   fill: none;
-  stroke-width: 15;
+  stroke-width: 14;
 }
 .frame__ring-bed {
   stroke: var(--c-blue);
@@ -1963,7 +2205,7 @@ body::-webkit-scrollbar {
 .frame__ring-dash {
   stroke: var(--c-magenta);
   stroke-dasharray: 4.29052 4.29052;
-  animation: frame-ring calc(var(--frame-speed) * 4.29052 / 10.4598) linear
+  animation: frame-ring calc(var(--frame-speed) * 4.29052 / 4.31386) linear
     infinite;
 }
 
@@ -2635,5 +2877,185 @@ html[data-custom-cursor] * {
 
   .footer__artist-name {
     font-size: 12.12cqw;
+  }
+}
+
+/* ── the standing shop button ────────────────────────────────────────────── */
+
+/* Figma 337-873. The board's own button: #ff5ec2, a hard 2px black rule, a
+   black offset with no blur, and SHOP set in Barlow Condensed ExtraBold Italic
+   — the same face the footer's credit uses, leaning here as the board draws it.
+   Padding is asymmetric, 21 left against 17 right, which is the lean being
+   paid for: an italic cap needs the room at its foot, not at its shoulder.
+
+   Fixed to the window, not to a section, so it stays put for the rest of the
+   page once the hero has gone. Top right on a pointer; the phone rule below
+   moves it to the middle of the foot, where a thumb is. */
+.shopbtn {
+  position: fixed;
+  right: var(--gutter);
+  top: var(--gutter);
+  z-index: 100;
+
+  display: grid;
+  place-items: center;
+  /* The board's own box. Left to the text alone it came out 78x31 against the
+     board's 99x38 — the glyph advance the browser gets for this face is not the
+     one Figma measured — so the size is stated and the padding is a floor under
+     it. The 21/17 split is the lean being paid for: an italic cap wants the
+     room at its foot, not at its shoulder. */
+  min-width: 99px;
+  min-height: 38px;
+  padding: 4px 17px 4px 21px;
+
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  font-size: 20px;
+  line-height: 1;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  color: #161616;
+
+  background: #ff5ec2;
+  border: 2px solid #000;
+  border-radius: 6px;
+  filter: drop-shadow(-2px 2px 0 #000);
+
+  /* Held off the page until the hero has gone: out of the way of the pointer as
+     well as out of sight, or it would swallow clicks over the artwork. */
+  opacity: 0;
+  translate: 0 -12px;
+  pointer-events: none;
+  transition:
+    opacity 260ms ease-out,
+    translate 260ms ease-out,
+    transform 160ms ease-out,
+    background-color 160ms ease-out;
+}
+
+.shopbtn[data-shown] {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+
+/* The press and the hover the rest of the site's buttons take. */
+.shopbtn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shopbtn:hover {
+    background: var(--c-gold);
+  }
+}
+
+.shopbtn:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+/* Middle of the foot on a phone, where the thumb is, and tall enough to be a
+   target — the board's 38px is under the 44 a finger wants. */
+@media (max-width: 640px) {
+  .shopbtn {
+    right: auto;
+    top: auto;
+    bottom: var(--gutter);
+    left: 50%;
+    translate: -50% 12px;
+    min-height: 44px;
+    padding-inline: 26px 22px;
+    font-size: 22px;
+  }
+
+  .shopbtn[data-shown] {
+    translate: -50% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shopbtn {
+    translate: none;
+    transition: opacity 200ms ease;
+  }
+
+  .shopbtn[data-shown] {
+    translate: none;
+  }
+}
+
+/* ── the section reveal ──────────────────────────────────────────────────── */
+
+/* Two stages, driven by the two flags `useReveal` sets: the field first, then
+   the contents. `data-lit` fades the section's own gradient up from the flat
+   ink it starts on; `data-shown` follows a beat later and brings in everything
+   standing on it. The order is the point — the page changes colour, and only
+   then does the reader see what arrived on it.
+
+   The gradient is faded by a pseudo-element rather than by animating
+   `background-image`, which is not an animatable property: the section keeps
+   its own gradient, and this is a flat sheet of the colour the page was on
+   before, lifted off it. */
+.products,
+.ground,
+.lineup,
+.footer {
+  position: relative;
+  isolation: isolate;
+}
+
+.products::before,
+.ground::before,
+.lineup::before,
+.footer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--c-ink);
+  /* Drawn by the scroll — `useReveal` writes this every frame of the section's
+     approach. No transition: a transition on top of a scrub is two curves
+     fighting, and the scrub already carries its own smoothing. */
+  opacity: var(--field, 1);
+  pointer-events: none;
+}
+
+/* What stands on the field. Everything that is not the background, held back
+   until the field has had its beat. */
+.products__stage,
+.ground__inner,
+.lineup__list,
+.lineup__scatter,
+.footer__board {
+  opacity: 0;
+  translate: 0 18px;
+  transition:
+    opacity 700ms ease-out,
+    translate 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:is(.products, .ground, .lineup, .footer)[data-shown]
+  :is(
+    .products__stage,
+    .ground__inner,
+    .lineup__list,
+    .lineup__scatter,
+    .footer__board
+  ) {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .products__stage,
+  .ground__inner,
+  .lineup__list,
+  .lineup__scatter,
+  .footer__board {
+    translate: none;
+    transition: opacity 200ms ease;
   }
 }

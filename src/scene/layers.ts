@@ -65,6 +65,18 @@ export type LayerLink = {
   box: [string, string, string, string]
 }
 
+/**
+ * Words set on a layer's own artwork, in the artwork's own units — Figma
+ * 238-156454, which the board sets inside the medallion under the league's
+ * name. Not baked into the SVG, because it is copy: it has to be selectable,
+ * translatable and readable by a screen reader.
+ */
+export type LayerCaption = {
+  lines: string[]
+  /** [left, top, width], percentages of the content box. */
+  box: [string, string, string]
+}
+
 export type Layer = {
   id: string
   svg: string
@@ -77,6 +89,7 @@ export type Layer = {
   shrink?: number
   origin?: [string, string]
   link?: LayerLink
+  caption?: LayerCaption
 }
 
 /**
@@ -105,6 +118,15 @@ export const LAYERS: Layer[] = [
     id: 'badge',
     svg: badge,
     link: { ...SHOP_LINK, box: ['29.298%', '18.605%', '41.204%', '46.179%'] },
+    caption: {
+      lines: [
+        'Every game is your episode.',
+        'Cricket | Football | Badminton | Tennis | Basketball',
+      ],
+      // Under the league's name, inside the cream. The medallion's own box is
+      // the link's above; this sits in its lower third.
+      box: ['32.4%', '49.4%', '35%'],
+    },
     depth: 0.26,
     down: -1,
     shrink: 0.36,

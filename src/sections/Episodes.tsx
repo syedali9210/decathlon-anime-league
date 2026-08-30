@@ -231,7 +231,13 @@ function useIntroSequence(
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: runway,
-          start: "top top",
+          // Not `top top`. Waiting for the runway to reach the top of the
+          // window meant waiting for the hero to finish sliding off it, and the
+          // whole of that slide showed an empty screen coming up underneath —
+          // the first thing after the hero was nothing at all. Started as the
+          // runway comes into view instead, so the headline is already falling
+          // in behind the hero's tail and the two sections hand over.
+          start: "top 85%",
           end: () => "+=" + pinned() * INTRO_SPAN,
           // A second and a bit of catch-up rather than half of one. Scrub is
           // not the sequence's speed — the scroll range is — but it is what
@@ -658,12 +664,18 @@ export function Episodes() {
           ))}
         </h2>
 
-        <p className="episodes__sub" ref={sub}>
-          5 sports. 5 leagues
-          <br />
-          One main character &ndash; <em>YOU</em>
-        </p>
 
+        {/* Figma 239-156472. Two lines with a gap rather than one paragraph
+            broken by a rule — the board sets them as separate blocks — and YOU
+            carries its own colour. Not to be confused with the copy that used
+            to sit here as well: that one belongs on the hero's medallion, and
+            is printed on it. */}
+        <p className="episodes__sub" ref={sub}>
+          <span>5 sports. 5 leagues</span>
+          <span>
+            One main character &ndash; <em>YOU</em>
+          </span>
+        </p>
         <p className="episodes__choose" ref={label} aria-label={PHRASES[0]}>
           <svg
             className="episodes__spark"

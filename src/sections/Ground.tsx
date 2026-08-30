@@ -176,7 +176,7 @@ const CHARACTERS: Character[] = [
 ]
 
 /** Seconds a character holds before the collage turns over. */
-const HOLD = 7
+const HOLD = 4.5
 
 // Namespaced once at module load: the boards came out of one export session and
 // share generated def names, so two of them inlined into the same document

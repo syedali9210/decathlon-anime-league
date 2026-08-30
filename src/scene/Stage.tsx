@@ -61,6 +61,29 @@ export function Stage() {
                   __html: namespaceIds(l.svg, `${l.id}-`),
                 }}
               />
+              {/* The board sets copy on the medallion itself. Its own layer,
+                  carrying the same transform variables as the art, so the words
+                  ride the parallax and the condense with the plate they are
+                  printed on rather than sliding across it. */}
+              {l.caption && (
+                <div className="layer" data-layer={`${l.id}-caption`} style={vars}>
+                  <p
+                    className="layer__caption"
+                    style={{
+                      left: l.caption.box[0],
+                      top: l.caption.box[1],
+                      width: l.caption.box[2],
+                    }}
+                  >
+                    {l.caption.lines.map((line, i) => (
+                      <Fragment key={line}>
+                        {i > 0 && <br />}
+                        {line}
+                      </Fragment>
+                    ))}
+                  </p>
+                </div>
+              )}
               {l.link && (
                 // Its own layer, carrying the same transform variables as the
                 // art it sits on, so the hotspot tracks the banner through the

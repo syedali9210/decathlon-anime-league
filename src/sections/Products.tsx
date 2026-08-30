@@ -105,25 +105,37 @@ export function Products() {
           {PRODUCTS.map((p) => (
             // The episode deck's SHOP links land here.
             <li className="pcard" id={`tee-${p.id}`} key={p.id}>
-              {/* Photo sits under the chrome and is clipped to the chamfered
-                  window the artwork cuts for it — see --pcard-window. */}
-              <img
-                className="pcard__photo"
-                src={p.photo}
-                srcSet={`${p.small} 320w, ${p.photo} ${p.width}w`}
-                sizes={PHOTO_SIZES}
-                alt={`${p.name} ${p.kind}, worn on a ${p.sport} court`}
-                loading="lazy"
-                decoding="async"
-              />
-              <img className="pcard__chrome" src={chrome} alt="" aria-hidden="true" />
+              {/* The artwork's own box, and what carries the card's 425:723.
+                  The meta is its SIBLING rather than its child, which is what
+                  lets it drop out of the plate and become a caption under the
+                  card on a phone — see the container query in the stylesheet. */}
+              <div className="pcard__plate">
+                {/* Photo sits under the chrome and is clipped to the chamfered
+                    window the artwork cuts for it — see --pcard-window. */}
+                <img
+                  className="pcard__photo"
+                  src={p.photo}
+                  srcSet={`${p.small} 320w, ${p.photo} ${p.width}w`}
+                  sizes={PHOTO_SIZES}
+                  alt={`${p.name} ${p.kind}, worn on a ${p.sport} court`}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <img className="pcard__chrome" src={chrome} alt="" aria-hidden="true" />
+              </div>
 
               <div className="pcard__meta">
                 <div className="pcard__id">
                   {/* The full catalogue name: the collection, then the tee.
                       Two lines on a full-size card, which is what `pcard__id`
                       being a column and `pcard__name` wrapping are already for. */}
-                  <span className="pcard__name">Anime Sports League - {p.name} Black</span>
+                  {/* A non-breaking space before the dash, so where the name
+                      wraps on a phone it breaks AFTER it — "Anime Sports
+                      League -" over "Cap Black", rather than a line starting
+                      with a stray hyphen. */}
+                  <span className="pcard__name">
+                    Anime Sports League&nbsp;- {p.name} Black
+                  </span>
                   <span className="pcard__price">₹ {p.price}</span>
                 </div>
                 <ul className="pcard__swatches" aria-label="Colours">
