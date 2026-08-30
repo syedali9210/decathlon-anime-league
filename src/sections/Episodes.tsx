@@ -250,7 +250,6 @@ function useIntroSequence(
       ];
       const [lead, ...claims] = slides;
       if (!lead) return;
-      const rays = stage.querySelector<HTMLElement>(".episodes__rays");
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -318,77 +317,24 @@ function useIntroSequence(
       // more of the sequence than it used to, the sequence takes less scroll.
       const FIRST = 4.4;
       const EVERY = 1.7;
-
-      /**
-       * The claims cut in from alternating sides, land square, and leave the
-       * other way — a title sequence cutting between panels rather than four
-       * lines taking turns in the same spot, which is what made the middle of
-       * this section read as a slideshow on a black screen.
-       *
-       * Every ease still only ever settles. The timeline is SCRUBBED, and an
-       * overshoot replays its bounce each time the reader drags back a few
-       * pixels — which is the thing that read as "not smooth" before.
-       */
       claims.forEach((c, i) => {
         const at = FIRST + i * EVERY;
-        const side = i % 2 ? 1 : -1;
-        // The last one is YOU, and it is the line the other three are building
-        // to — so it comes from much further back and lands much bigger.
-        const hot = c.dataset.hot !== undefined;
         tl.fromTo(
           c,
-          {
-            autoAlpha: 0,
-            x: () => side * window.innerWidth * 0.2,
-            rotate: side * 5,
-            scale: hot ? 0.45 : 0.86,
-          },
-          {
-            autoAlpha: 1,
-            x: 0,
-            rotate: 0,
-            scale: 1,
-            duration: 0.7,
-            ease: "power3.out",
-          },
+          { autoAlpha: 0, y: 60 },
+          // `power2.out`, not `back`. An overshoot is a played beat: it works
+          // when time runs it, and wobbles when a SCRUB does — dragging back a
+          // few pixels replays the bounce, which is most of what read as the
+          // text not being smooth. The claims are scrubbed, so they get an ease
+          // that only ever settles.
+          { autoAlpha: 1, y: 0, duration: 0.65, ease: "power2.out" },
           at,
         ).to(
           c,
-          {
-            autoAlpha: 0,
-            x: () => -side * window.innerWidth * 0.16,
-            rotate: -side * 4,
-            duration: 0.55,
-            ease: "power2.in",
-          },
+          { autoAlpha: 0, y: -60, duration: 0.55, ease: "power2.in" },
           at + 0.95,
         );
       });
-
-      /**
-       * The speed lines rise under the first claim, hold behind all four, and
-       * blow out on YOU — so the relay is building to something visible and not
-       * just to its own last line. See `.episodes__rays`.
-       */
-      if (rays) {
-        const youAt = FIRST + (claims.length - 1) * EVERY;
-        tl.fromTo(
-          rays,
-          { autoAlpha: 0, scale: 0.55 },
-          { autoAlpha: 0.5, scale: 1, duration: 1.1, ease: "power2.out" },
-          FIRST - 0.5,
-        )
-          .to(
-            rays,
-            { autoAlpha: 1, scale: 1.22, duration: 0.5, ease: "power2.out" },
-            youAt,
-          )
-          .to(
-            rays,
-            { autoAlpha: 0, scale: 1.5, duration: 0.9, ease: "power2.in" },
-            youAt + 1.05,
-          );
-      }
 
       // Everything the relay was standing in for, arriving at once and rising
       // into place — which is what clears the room the deck needs.
@@ -792,10 +738,6 @@ export function Episodes() {
         {/* Over the pinned screen, not in its flow: the relay has to sit in the
             middle of the window whatever the header underneath it is doing. */}
         <div className="episodes__relay" aria-hidden="true" ref={relay}>
-          {/* The manga burst the claims land on — see `.episodes__rays`. It is
-              the backdrop, so it comes first and everything below paints over
-              it. */}
-          <div className="episodes__rays" />
           {RELAY.map((r) => (
             <span
               className="episodes__slide"
