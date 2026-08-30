@@ -2108,10 +2108,16 @@ body::-webkit-scrollbar {
   width: 9.5%;
 }
 
-/* The list runs edge to edge on a phone; the props would sit on the titles. */
 @media (max-width: 720px) {
+  /* Dropped a layer rather than dropped altogether. The list runs edge to edge
+     at this width, so the props were landing ON the titles and the fix at the
+     time was to hide them — which left the phone with a section of bare type
+     and none of the scatter the board is built around. Behind the list they
+     read as what they always were: things lying on the field the titles stand
+     on. `.lineup` isolates, so a negative index goes behind the list without
+     escaping the section and falling behind the page's own gradient. */
   .lineup__scatter {
-    display: none;
+    z-index: -1;
   }
   .lineup__row {
     gap: 10px;
@@ -2729,6 +2735,119 @@ html[data-custom-cursor] * {
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: #000;
+}
+
+/* -- the portrait board --------------------------------------------------- */
+
+/* Figma 345-970 ("iPhone 17 - 3"), 402x755. The same artwork as the wide board,
+   rearranged: the racket and the shuttlecock go, the emblem takes half the
+   width instead of a fifth, and the lockup stacks onto three lines.
+
+   Every piece reads its `-sm` custom property here and falls back to its wide
+   one — see the note at the top of Footer.tsx for why the numbers are handed
+   down as properties rather than written into this block. A piece with no
+   portrait numbers (there are none left, but the fallback is what makes adding
+   one safe) simply keeps the numbers it already had. */
+/* The standing SHOP pill moves to the middle of the foot at 640 — see
+   `.shopbtn` — and the credit's last line is the last thing on the page, so the
+   pill was landing squarely on the artist's name. A strip of the board's own
+   pink under the board gives it somewhere to sit. Keyed to the PILL's own
+   breakpoint and not the portrait board's, or the two widths between them get
+   the collision back. Fixed, the pill can only ever be at the foot of the
+   window, so the room has to be made at the foot of the document. */
+@media (max-width: 640px) {
+  .footer {
+    padding-bottom: calc(var(--gutter) + 56px);
+  }
+}
+
+@media (max-width: 560px) {
+  .footer__board {
+    aspect-ratio: 402 / 755;
+    /* The field is drawn wider than the board and hangs off both edges — see
+       below — so the board has to be the thing that crops it. */
+    overflow: clip;
+  }
+
+  /* The portrait board does not scale the wide field down, it CROPS a squashed
+     and stretched copy of it: 1042x477 where the wide board is 1440x401, hung
+     off the left edge at -320 so the window lands on the middle of the wave.
+     Both axes are stated because the ratio is not the artwork's own — the file
+     carries `preserveAspectRatio="none"` precisely so it can be pulled to
+     whatever shape a board wants. */
+  .footer__field {
+    left: -79.6%; /* -320 of 402 */
+    top: 3.31%; /* 25 of 755 */
+    width: 259.2%; /* 1042 of 402 */
+    height: 63.18%; /* 477 of 755 */
+  }
+
+  /* The ruling keeps its full 1440 width and is hung further left again, so the
+     phone sees four verticals of the thirteen. */
+  .footer__grid {
+    left: -106.97%; /* -430 of 402 */
+    top: 3.31%;
+    width: 358.21%; /* 1440 of 402 */
+    height: 60.9%; /* 459.81 of 755 */
+  }
+
+  /* Filling the host rather than taking its own ratio, because the host is now
+     the stretched box above. */
+  .footer__grid svg {
+    height: 100%;
+  }
+
+  .footer__pin {
+    left: var(--x-sm, var(--x));
+    top: var(--y-sm, var(--y));
+    width: var(--w-sm, var(--w));
+  }
+
+  /* Neither is on the portrait board. Hidden rather than dropped from the
+     markup so one component serves both boards. */
+  .footer__pin[data-piece='racket'],
+  .footer__pin[data-piece='shuttle'] {
+    display: none;
+  }
+
+  .footer__label {
+    left: var(--x-sm, var(--x));
+    top: var(--y-sm, var(--y));
+    width: var(--w-sm, var(--w));
+    height: var(--h-sm, var(--h));
+    /* The ticket is drawn smaller here — 117 wide against the wide board's 145
+       — and its type comes down with it: 19.42 of the board's 402. */
+    font-size: 4.83cqw;
+  }
+
+  /* The starburst is the one piece drawn at the SAME size on both boards, so
+     its type does not scale with the rest: still 24, now of 402. */
+  .footer__label--burst {
+    font-size: 5.97cqw;
+  }
+
+  /* Three stacked lines, centred, rather than one row. The two names are set at
+     different sizes here where the wide board sets them the same — 64 and 55 of
+     402 — so they are split rather than sharing a rule. */
+  .footer__credit {
+    top: 84.52%; /* the block's own middle: 543 + 190.3/2, of 755 */
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .footer__lockup {
+    width: 95.52cqw; /* 384 of 402 */
+  }
+
+  .footer__x {
+    font-size: 15.92cqw; /* 64 of 402 */
+    line-height: 0.9672;
+  }
+
+  .footer__artist-name {
+    font-size: 13.68cqw; /* 55 of 402 */
+    line-height: 1;
+  }
 }
 
 /* -- how the board arrives ------------------------------------------------ */

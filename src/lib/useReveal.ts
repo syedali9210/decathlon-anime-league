@@ -38,10 +38,25 @@ export function useReveal(selector: string) {
     const triggers = targets.map((el) => {
       return ScrollTrigger.create({
         trigger: el,
-        // The section's approach: its first pixel on screen to a third of the
-        // way up the window.
+        // The section's approach: its first pixel on screen, then two thirds of
+        // a window of scroll — which is the same range `top 33%` describes, but
+        // written as a distance so it can be CAPPED by the section's own height.
+        //
+        // That cap is load-bearing for the last section on the page. A section
+        // can only ever be scrolled as far as its own height allows once its
+        // top has entered the window, so the footer — 187px tall on a phone
+        // against a 780px window — could reach 76% of the way up and no
+        // further. `top 33%` was unreachable, progress stopped at 0.36, and the
+        // flag this whole hook exists to set was never set: the field stayed
+        // clipped, every piece stayed at opacity 0, and the footer was
+        // invisible on every phone. It was not missing, it was permanently
+        // mid-reveal.
+        //
+        // Capped, a short section finishes its reveal exactly as its last pixel
+        // of scroll runs out, and a tall one is unchanged.
         start: 'top bottom',
-        end: 'top 33%',
+        end: () =>
+          '+=' + Math.min(window.innerHeight * 0.67, el.offsetHeight),
         scrub: 0.6,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
