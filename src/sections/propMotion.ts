@@ -38,8 +38,11 @@ gsap.registerPlugin(CSSPlugin, ScrollTrigger);
  */
 type PropSpec = {
   ball: number[];
-  /** Seconds per turn. Signed: negative spins anticlockwise. */
-  spin: number;
+  /**
+   * Seconds per turn. Signed: negative spins anticlockwise. Omit for a prop that
+   * should not turn at all — a ball rolls, a shuttlecock does not.
+   */
+  spin?: number;
   /**
    * How far the prop lags or leads the page, as a share of the scroll it takes
    * the section to pass the window. Signed: negative rides up against the
@@ -80,7 +83,11 @@ export const PROPS: Record<string, PropSpec> = {
    * pivot off the shuttlecock and out toward the flame, so the shuttle orbited
    * a point beside itself instead of turning on the spot.
    */
-  shuttle: { ball: r(11, 21), spin: 17, drift: -0.06, flicker: false },
+  /* No `spin`. A shuttlecock does not roll — it flies nose-first and the skirt
+     trails it — so turning this one on the spot read as a prop being animated
+     rather than as a shuttle in flight. It keeps its drift, which is the part
+     that was doing the work. */
+  shuttle: { ball: r(11, 21), drift: -0.06, flicker: false },
   tennisball: {
     ball: [2, 3, 4, 13, 14],
     spin: -11,
@@ -144,13 +151,18 @@ export function animateProp(
   const svgOrigin = `${cx} ${cy}`;
 
   const ctx = gsap.context(() => {
-    gsap.to(ball, {
-      rotation: spec.spin > 0 ? 360 : -360,
-      duration: Math.abs(spec.spin),
-      ease: "none",
-      repeat: -1,
-      svgOrigin,
-    });
+    // Guarded, not defaulted: a prop with no `spin` is one that should stand
+    // still, and a zero duration here would be a tween that never advances
+    // rather than one that never runs.
+    if (spec.spin) {
+      gsap.to(ball, {
+        rotation: spec.spin > 0 ? 360 : -360,
+        duration: Math.abs(spec.spin),
+        ease: "none",
+        repeat: -1,
+        svgOrigin,
+      });
+    }
 
     if (spec.flicker !== false) {
       // Per-flame flicker on its own clock, so the trail never pulses as one mass.
