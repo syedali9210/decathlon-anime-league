@@ -175,15 +175,14 @@ function Card({ ep }: { ep: (typeof EPISODES)[number] }) {
  * picks up after a short gap, and what is left at the end is the hold that
  * gives the landed deck a beat before the section scrolls on.
  */
-// The relay is scrubbed, so this is a share of a window that is itself now
-// 300svh rather than 490 — the sequence keeps every beat and takes about a
-// third of the scroll it used to. It was two and a half screens of one line of
-// type at a time on an otherwise empty screen, which reads as the page having
-// stalled rather than as a build-up, with the deck three flicks out of reach.
+// The relay no longer spends this — it plays on its own clock and this is not
+// its `end` any more. What the share still does is hold the front of the pinned
+// window BACK from the deal, which gives the sequence room to finish before the
+// cards start moving. It is a buffer now rather than a budget.
 const INTRO_SPAN = 0.46;
-// The same mark the intro ends on, not a hair after it: the row is revealed by
-// the last frame of the intro, and any gap between the two would show the deck
-// sitting undealt.
+// The mark the deal picks up on. The row is revealed by the relay's last frame
+// and by this trigger's own `onEnter`, whichever arrives first — see the note
+// on that handler.
 const DEAL_AT = INTRO_SPAN;
 // Widened as the intro gave scroll back: the deal is the payoff and now takes
 // more than a third of the pinned window instead of a quarter of it, so the
@@ -228,7 +227,9 @@ function useIntroSequence(
 
     const runway = el.closest<HTMLElement>(".episodes-runway");
     if (!runway) return;
-    const pinned = () => runway.offsetHeight - window.innerHeight;
+    // The runway's pinned length used to set this sequence's `end`. It plays on
+    // its own clock now and only needs the runway as something to trigger off,
+    // so the measurement went with the scrub.
 
     const group = [head, sub.current, choose.current].filter(
       Boolean,
@@ -261,12 +262,16 @@ function useIntroSequence(
           // runway comes into view instead, so the headline is already falling
           // in behind the hero's tail and the two sections hand over.
           start: "top 85%",
-          end: () => "+=" + pinned() * INTRO_SPAN,
-          // A second and a bit of catch-up rather than half of one. Scrub is
-          // not the sequence's speed — the scroll range is — but it is what
-          // makes it read as gliding to the scroll position instead of being
-          // dragged frame by frame, which is most of what "too quick" was.
-          scrub: 1.15,
+          // PLAYED, not scrubbed. The sequence used to be dragged by the
+          // scrollbar, so its speed was the reader's speed and its timing was
+          // whatever their trackpad did — a flick threw four title cards past
+          // in a frame, and a slow drag left a word hanging mid-move. It runs on
+          // its own clock now: scroll only says WHEN it starts.
+          //
+          // Reset on the way back up rather than left finished, so a reader who
+          // scrolls back sees it again instead of finding the section already
+          // assembled. No `end` and no scrub, so neither is doing anything.
+          toggleActions: "play none none reset",
           invalidateOnRefresh: true,
         },
       });
@@ -295,57 +300,57 @@ function useIntroSequence(
         .fromTo(
           lead,
           { autoAlpha: 0, y: 70 },
-          { autoAlpha: 1, y: 0, duration: 1.1, ease: "power2.out" },
+          { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
           0,
         )
         // Held at rest long enough to be read, then out the way it came — the
         // same 70 it arrived on, so the whole relay travels one direction.
         .to(
           lead,
-          { autoAlpha: 0, y: -70, duration: 0.75, ease: "power2.in" },
-          3.5,
+          { autoAlpha: 0, y: -70, duration: 0.5, ease: "power2.in" },
+          1.9,
         );
 
       // Each claim rises into the middle, holds, and leaves upward — so the
-      // whole relay travels one way and reads as a single move rather than
-      // four separate entrances.
-      // Every move here is about half again as long as it was, and the cadence
-      // has opened up with them so they still get a beat at rest in the middle
-      // rather than turning over the moment they arrive. Longer moves inside a
-      // slightly shorter window is the whole of the change: each claim takes
-      // more of the sequence than it used to, the sequence takes less scroll.
-      const FIRST = 4.4;
-      const EVERY = 1.7;
+      // whole relay travels one way and reads as a single move rather than four
+      // separate entrances.
+      //
+      // These are SECONDS now. Under a scrub the numbers were only ratios of
+      // each other and the scroll range set the pace, so the timeline could run
+      // to fourteen of them and nobody noticed; played, fourteen seconds is a
+      // section that holds the reader hostage. Retimed to about seven, with each
+      // claim up for roughly six tenths of a second before it starts to leave —
+      // enough for three words, which is all any of them is.
+      const FIRST = 2.2;
+      const EVERY = 1;
       claims.forEach((c, i) => {
         const at = FIRST + i * EVERY;
         tl.fromTo(
           c,
           { autoAlpha: 0, y: 60 },
-          // `power2.out`, not `back`. An overshoot is a played beat: it works
-          // when time runs it, and wobbles when a SCRUB does — dragging back a
-          // few pixels replays the bounce, which is most of what read as the
-          // text not being smooth. The claims are scrubbed, so they get an ease
-          // that only ever settles.
-          { autoAlpha: 1, y: 0, duration: 0.65, ease: "power2.out" },
+          { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out" },
           at,
         ).to(
           c,
-          { autoAlpha: 0, y: -60, duration: 0.55, ease: "power2.in" },
-          at + 0.95,
+          { autoAlpha: 0, y: -60, duration: 0.35, ease: "power2.in" },
+          at + 0.6,
         );
       });
 
       // Everything the relay was standing in for, arriving at once and rising
       // into place — which is what clears the room the deck needs.
-      const settle = FIRST + claims.length * EVERY + 0.55;
+      const settle = FIRST + claims.length * EVERY + 0.3;
       tl.to(
         group,
-        { opacity: 1, y: 0, duration: 1.2, ease: "power2.out" },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
         settle,
       )
-        // Handed over on the intro's last frame, which is the frame the deal
-        // starts on.
-        .set(row, { autoAlpha: 1 }, settle + 1.2);
+        // Handed over on the relay's last frame. The deck is no longer waiting
+        // for a scroll position, so the deal's own trigger reveals the row too
+        // — see `useCardDeal`. Whichever happens first wins, which is what
+        // stops a fast scroller reaching the deal while the row is still
+        // hidden by a sequence that has not finished playing.
+        .set(row, { autoAlpha: 1 }, settle + 0.6);
     }, el);
 
     return () => ctx.revert();
@@ -483,6 +488,14 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
                   DEAL_SPAN,
               scrub: 0.6,
               invalidateOnRefresh: true,
+              // The relay hides the row and reveals it again on its own last
+              // frame. That was safe while the relay was scrubbed, because the
+              // same scroll drove both and the deal could not start early. Now
+              // the relay runs on a clock, so a reader who flicks past can be
+              // here while it is still mid-sequence — and the deck would deal
+              // itself behind a hidden row. Whichever of the two gets here
+              // first shows it.
+              onEnter: () => gsap.set(row, { autoAlpha: 1 }),
               onLeave: () => el.toggleAttribute("data-landed", true),
               onEnterBack: () => el.toggleAttribute("data-landed", false),
               // `onLeave` only fires on an actual crossing, so a reload with
