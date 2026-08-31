@@ -152,6 +152,20 @@ const turn = (r?: number) =>
  * Figma centres the turned text in its bounding box, so this places the box and
  * lets the type turn inside it. The turn is the same on both boards: it is the
  * sticker's own lean, and the sticker is one drawing.
+ *
+ * The `x`/`y` here are the BOUNDING BOX's, and Figma does not report that for a
+ * rotated text node — it reports the top-left the text had BEFORE it was turned,
+ * which is a different point. Taking Figma's number straight put "special
+ * edition" 25 units right of the star it belongs to, and the words ran off the
+ * points into the field.
+ *
+ * Rotating a `w`x`h` block about its own top-left by an angle t moves the box:
+ *   t > 0 (clockwise)     left -= h * sin(t),  top unchanged
+ *   t < 0 (anticlockwise) left unchanged,      top -= w * |sin(t)|
+ * and `w`/`h` are recovered from the reported bounding box, which is all Figma
+ * gives for the size. Every pair below has had that correction applied. The
+ * artwork above needs the same treatment for the same reason — see the note at
+ * the top of this file.
  */
 const label = (
   x: number,
@@ -331,9 +345,9 @@ export function Footer() {
         <p
           className="footer__label"
           data-label="choose"
-          style={label(5.9, 23.67, 4.71, 5.62, -9.05, {
+          style={label(5.9, 22.21, 4.71, 5.62, -9.05, {
             x: 6.32,
-            y: 7.05,
+            y: 6.11,
             w: 13.64,
             h: 3.6,
           })}
@@ -343,9 +357,9 @@ export function Footer() {
         <p
           className="footer__label"
           data-label="league"
-          style={label(5.28, 28.27, 7.86, 6.59, -8.77, {
+          style={label(5.28, 25.84, 7.86, 6.59, -8.77, {
             x: 4.51,
-            y: 9.99,
+            y: 8.43,
             w: 22.78,
             h: 4.23,
           })}
@@ -369,7 +383,7 @@ export function Footer() {
           className="footer__label footer__label--burst"
           data-label="burst"
           style={label(83.26, 34.69, 5.51, 11.39, 26.09, {
-            x: 79.98,
+            x: 73.63,
             y: 36.44,
             w: 19.75,
             h: 9.02,
