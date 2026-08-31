@@ -423,16 +423,6 @@ body::-webkit-scrollbar {
   pointer-events: none;
 }
 
-/* The banner hotspots. Positioned as percentages of the content box (see
-   LayerLink in layers.ts) inside a layer carrying the banner's own transform,
-   so they ride the pointer parallax and the condense with the art. */
-.layer__link {
-  position: absolute;
-  display: block;
-  pointer-events: auto;
-  border-radius: 6px;
-}
-
 /* Figma 238-156454, printed on the medallion: Barlow Condensed Medium in the
    board's magenta, which is a colour for cream and not for the night sky the
    rest of this scene is. Sized in `cqw` of the artwork — 14 of the artboard's
@@ -448,11 +438,6 @@ body::-webkit-scrollbar {
   text-wrap: balance;
   color: var(--c-magenta);
   pointer-events: none;
-}
-
-.layer__link:focus-visible {
-  outline: 3px solid var(--c-pink);
-  outline-offset: 5px;
 }
 
 .layer > svg {
@@ -1251,7 +1236,18 @@ body::-webkit-scrollbar {
   position: absolute;
   translate: -50% -50%;
   pointer-events: none;
-  z-index: 2; /* the props overflow above the cards */
+  /* BEHIND the cards, not over them. They used to sit on top, which is fine
+     while a ball is in a gap and wrong the moment it is not — and a ball is
+     taller than the gap it lives in, so it never entirely was. Every drift, and
+     every reflow that moves a card, put one on a photograph sooner or later.
+     Tucked behind, the overlap stops being a fault and becomes the point: a
+     ball between two cards is cut by the card it passes behind, which reads as
+     depth, and there is no arrangement of positions or drifts that can ever put
+     one over a face or a price again.
+     `.pcard` is positioned, so it paints above a negative index without needing
+     one of its own; `.products` isolates, so this cannot fall through to the
+     page's own gradient. */
+  z-index: -1;
   will-change: transform;
 }
 
@@ -1302,14 +1298,19 @@ body::-webkit-scrollbar {
   --sy: 1;
 }
 
-/* The two on the ends sit a little further in than the board draws them: at 1%
-   and 96% they are hard against the stage with nowhere to travel, and half a
-   drift carried each of them out of the section entirely — the football over
-   the ground above it, the tennis ball over the line-up below. Moved in, they
-   keep the full differential. */
+/* All four live on the band between the two rows of cards.
+   The football was at `top: 7%` and the tennis ball at `90%`, which are not
+   gaps — they are the middle of card one and card six, so both balls sat on a
+   photograph. Measured, the rows occupy 0-44.7% and 55.3-100% of the stage, and
+   the 10.6% between them is the only clear band across this layout. That is
+   where they go, at four different heights so they read as scattered rather
+   than as a row of balls on a shelf.
+
+   A ball is taller than that band and its drift is taller again, so it cannot
+   be contained by placement alone — which is what the z-index below is for. */
 .products__prop[data-prop='football'] {
   left: 8%;
-  top: 7%;
+  top: 50%;
   width: 15%;
 }
 .products__prop[data-prop='cricketball'] {
@@ -1317,15 +1318,15 @@ body::-webkit-scrollbar {
   top: 52.5%;
   width: 15.7%;
 }
+.products__prop[data-prop='tennisball'] {
+  left: 67%;
+  top: 48%;
+  width: 20.4%;
+}
 .products__prop[data-prop='shuttle'] {
   left: 98%;
-  top: 45%;
+  top: 53%;
   width: 15.5%;
-}
-.products__prop[data-prop='tennisball'] {
-  left: 94%;
-  top: 90%;
-  width: 20.4%;
 }
 
 /* Two columns below this; the cards get unreadable three-up. */

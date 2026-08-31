@@ -162,11 +162,15 @@ function Card({ ep }: { ep: (typeof EPISODES)[number] }) {
  */
 // Just enough that the header is read before the first card moves, rather than
 // the deal starting under it.
-const DEAL_AT = 0.12;
+const DEAL_AT = 0.1;
 // The deal is the only thing left that needs scroll, so it takes most of what
-// there is. What remains at the end is the hold that gives the landed deck a
-// beat before the section scrolls on.
-const DEAL_SPAN = 0.62;
+// there is — and it was worth giving it more. Five staggered cards across 0.62
+// of the window worked out at about ninety pixels of scroll each, which is not
+// enough travel to read as dealing; it read as snapping. Widened rather than
+// lengthening the runway, because the runway is short on purpose now. What
+// remains at the end is the hold that gives the landed deck a beat before the
+// section scrolls on.
+const DEAL_SPAN = 0.75;
 
 /**
  * The header arrives, all of it at once.
@@ -372,8 +376,18 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
             rotate: 0,
             rotateY: 180,
             scale: 1,
-            ease: "none",
-            stagger: 0.09,
+            // `power1.inOut`, not `none`. Linear is the usual default under a
+            // scrub — the scroll is already the clock, so an ease can only
+            // fight it — but that reasoning holds for ONE tween mapped to a
+            // range. This is five, staggered, and each card's own share of the
+            // range is short: linear meant every card started at full speed and
+            // stopped dead, five times over, which is the hard edge that read
+            // as snapping. Easing in and out of each card's own window smooths
+            // the ends without touching where the scroll puts them, and it only
+            // ever settles — no overshoot to replay when the reader drags back.
+            ease: "power1.inOut",
+            // A touch more separation now there is more room to spend it in.
+            stagger: 0.11,
             scrollTrigger: {
               // The pinned window: the runway's top reaching the top of the
               // viewport until its bottom reaches the bottom, which is exactly
@@ -391,7 +405,11 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
                   ? runway.offsetHeight - window.innerHeight
                   : window.innerHeight) *
                   DEAL_SPAN,
-              scrub: 0.6,
+              // Twice the catch-up. Scrub is not the deal's speed — the range
+              // is — but it is what decides whether the deck glides to the
+              // scroll position or is dragged frame by frame with it, and at
+              // 0.6 every twitch of a trackpad was arriving in the cards.
+              scrub: 1.2,
               invalidateOnRefresh: true,
               // The other end of the hide above: the row comes back the moment
               // the deal starts, which is the first frame a card is anywhere

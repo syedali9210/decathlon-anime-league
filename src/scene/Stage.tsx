@@ -84,31 +84,6 @@ export function Stage() {
                   </p>
                 </div>
               )}
-              {l.link && (
-                // Its own layer, carrying the same transform variables as the
-                // art it sits on, so the hotspot tracks the banner through the
-                // pointer parallax and the condense instead of drifting off it.
-                <div
-                  className="layer"
-                  data-layer={`${l.id}-link`}
-                  style={vars}
-                >
-                  <a
-                    className="layer__link"
-                    href={l.link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      left: l.link.box[0],
-                      top: l.link.box[1],
-                      width: l.link.box[2],
-                      height: l.link.box[3],
-                    }}
-                  >
-                    <span className="sr-only">{l.link.label}</span>
-                  </a>
-                </div>
-              )}
             </Fragment>
           )
         })}

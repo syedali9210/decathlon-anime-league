@@ -74,8 +74,13 @@ export const PROPS: Record<string, PropSpec> = {
    * the ball read as two things sliding over each other. 14-15 are the pink
    * flame that group also holds, and those do stay.
    */
-  football: { ball: r(0, 13), spin: 13, drift: -0.09, flicker: false },
-  cricketball: { ball: r(0, 8), spin: -9.5, drift: 0.07, flicker: false },
+  // Every drift here is about half what it was. The props now live on the band
+  // between the two rows of cards and are painted behind them, so travel that
+  // carries one out of that band does not read as a ball drifting — it reads as
+  // a ball disappearing. Half the excursion keeps most of each one in the gap
+  // for the whole pass, which is the only place it can actually be seen.
+  football: { ball: r(0, 13), spin: 13, drift: -0.045, flicker: false },
+  cricketball: { ball: r(0, 8), spin: -9.5, drift: 0.035, flicker: false },
   /**
    * 11-21 is skirt and cork. 22 is a lick of flame that happens to be drawn
    * with them, and including it did two things: it dragged that flame round in
@@ -87,11 +92,11 @@ export const PROPS: Record<string, PropSpec> = {
      trails it — so turning this one on the spot read as a prop being animated
      rather than as a shuttle in flight. It keeps its drift, which is the part
      that was doing the work. */
-  shuttle: { ball: r(11, 21), drift: -0.06, flicker: false },
+  shuttle: { ball: r(11, 21), drift: -0.03, flicker: false },
   tennisball: {
     ball: [2, 3, 4, 13, 14],
     spin: -11,
-    drift: 0.08,
+    drift: 0.04,
     flicker: false,
   },
   /**

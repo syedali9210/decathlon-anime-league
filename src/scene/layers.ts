@@ -52,20 +52,6 @@ import bannerLeft from '../assets/scene/banner-left.svg?raw'
 import flags from '../assets/scene/flags.svg?raw'
 
 /**
- * A hit area over part of a layer. Given as percentages of the 1495x903 content
- * box, so it rides the layer's own transform — the banners drift with the
- * pointer parallax and move again under `--condense`, and a hotspot positioned
- * against the stage instead would come unstuck from the art at both.
- */
-export type LayerLink = {
-  href: string
-  /** Accessible name; the anchor itself is empty. */
-  label: string
-  /** [left, top, width, height], percentages of the content box. */
-  box: [string, string, string, string]
-}
-
-/**
  * Words set on a layer's own artwork, in the artwork's own units — Figma
  * 238-156454, which the board sets inside the medallion under the league's
  * name. Not baked into the SVG, because it is copy: it has to be selectable,
@@ -88,25 +74,16 @@ export type Layer = {
   down?: number
   shrink?: number
   origin?: [string, string]
-  link?: LayerLink
   caption?: LayerCaption
 }
 
 /**
- * Every hotspot on the scene points at the same place. The boxes below are each
- * layer's art as percentages of the 1495x903 content box: the banners are the
- * 110x374 placed at (434,159) and (1057,156) — see the translate in
- * `assets/scene/banner-*.svg` — and the badge is its own 616x417 at (490,216).
- * Change either the translate or the art and change the box with it.
- *
- * One name for all three, deliberately: they share a destination, and links to
- * the same place should read the same.
+ * The badge and the two banners used to carry hotspots into decathlon.in. They
+ * are gone: the hero is the campaign's own artwork, and three invisible anchors
+ * laid over it made the whole first screen behave like a banner ad. The
+ * standing brand mark and the Shop pill both go to the same place and both say
+ * so, which is where that errand belongs.
  */
-const SHOP_LINK = {
-  href: 'https://www.decathlon.in/',
-  label: 'Shop Decathlon',
-} as const
-
 export const LAYERS: Layer[] = [
   { id: 'net', svg: net, depth: 0.1 },
   { id: 'nebula-left', svg: nebulaLeft, depth: 0.08, idle: 19, exit: -40 },
@@ -117,7 +94,6 @@ export const LAYERS: Layer[] = [
   {
     id: 'badge',
     svg: badge,
-    link: { ...SHOP_LINK, box: ['29.298%', '18.605%', '41.204%', '46.179%'] },
     caption: {
       lines: [
         'Every game is your episode.',
@@ -162,7 +138,6 @@ export const LAYERS: Layer[] = [
   {
     id: 'banner-right',
     svg: bannerRight,
-    link: { ...SHOP_LINK, box: ['67.224%', '11.960%', '7.358%', '41.417%'] },
     depth: 0.62,
     idle: 9,
     down: -1,
@@ -172,7 +147,6 @@ export const LAYERS: Layer[] = [
   {
     id: 'banner-left',
     svg: bannerLeft,
-    link: { ...SHOP_LINK, box: ['25.552%', '12.292%', '7.358%', '41.417%'] },
     depth: 0.62,
     idle: 10,
     down: -1,
