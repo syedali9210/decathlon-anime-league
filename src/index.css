@@ -501,20 +501,16 @@ body::-webkit-scrollbar {
    card leaving the screen crosses the same colour it was dealt on. */
 .episodes-runway {
   position: relative;
-  /* Long enough to hold the whole sequence: the headline riding up from the
-     foot of the screen and landing a letter at a time, then four claims each
-     taking the middle alone and leaving, then the header arriving in its place,
-     and only then the deal and its hold. Seven beats before a card is dealt,
-     and each of them wants roughly a third of a screen of scroll to itself —
-     at 230svh they overlapped into one event, and at 420svh they still went by
-     too fast to read.
-     490 was still two and a half screens of scroll with nothing on them but
-     one line of type at a time, which read as the page having run out rather
-     than as a build-up — the deck is what the reader came for and it was three
-     flicks away. The sequence is SCRUBBED, so shortening the runway does not
-     drop a beat: the same timeline is mapped onto less scroll and every beat
-     keeps its share. See Episodes.tsx. */
-  height: 300svh;
+  /* Only the deal needs scroll now.
+     This was 490svh, then 300, and every one of those numbers was buying beats
+     for the intro relay: that sequence was scrubbed, so its seven title cards
+     had to be PAID for in scroll, and the reader spent two and a half screens
+     on one line of type at a time. The relay is gone and the header plays on
+     its own clock, so all of that length was scroll with nothing left in it.
+     What remains is a short beat to read the header, the deal, and the hold
+     that gives the landed deck a moment before the section scrolls on — see
+     DEAL_AT and DEAL_SPAN in Episodes.tsx, which divide it. */
+  height: 190svh;
   overflow: clip;
 }
 
@@ -623,12 +619,13 @@ body::-webkit-scrollbar {
   scroll-snap-align: center;
 }
 
-/* Shorter here, because the deal does not run at this width — the deck is sat
-   down face up — so the back half of a 360svh runway would be scroll with
-   nothing on it. The intro still plays; it just gets most of the window. */
+/* Shorter again here, because the deal does not run at this width — the deck is
+   sat down face up — so there is nothing at all left that needs scroll. The
+   header plays on arrival and the section is pinned only long enough to read
+   it. */
 @media (max-width: 640px) {
   .episodes-runway {
-    height: 210svh;
+    height: 125svh;
   }
 }
 
@@ -775,61 +772,6 @@ body::-webkit-scrollbar {
   color: #ff398e;
 }
 
-
-/* ── the intro relay ─────────────────────────────────────────────────────── */
-
-/* Five title cards sharing the middle of the pinned screen, one at a time. All
-   in one grid cell so nothing reflows as they take turns, and out of the flow
-   so the header keeps its own layout underneath. */
-.episodes__relay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding-inline: var(--gutter);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* `opacity: 0` here and not in the timeline, so the one state this can be left
-   in without JS is the invisible one — under reduced motion the hook bails and
-   the page is just its layout, with the header and copy plainly on show. */
-.episodes__slide {
-  grid-area: 1 / 1;
-  margin: 0;
-  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
-  font-weight: 600;
-  font-style: italic;
-  /* Smaller than the headline it follows, so the claims read as its answer
-     rather than as five headlines in a row. */
-  font-size: clamp(1.4rem, min(5.2vw, 7svh), 3.6rem);
-  line-height: 1.05;
-  letter-spacing: 0.02em;
-  text-align: center;
-  text-transform: uppercase;
-  text-wrap: balance;
-  color: #fff;
-  opacity: 0;
-  /* No `will-change`. It was here for the headline's old 3.2x scale, which does
-     re-rasterise glyphs every frame and does need a promoted layer. The slides
-     only translate now, and a translate composites without being asked — so
-     this would be five permanent textures bought for a move that never needed
-     them. The hero paid that bill for nineteen layers; this section is not
-     going to open a second one. */
-}
-
-/* The headline keeps the size and measure it has in the layout — this is the
-   same title arriving, not a different one. */
-.episodes__slide[data-slide='title'] {
-  max-width: min(78%, 1100px);
-  font-size: clamp(1.5rem, min(6.5vw, 9svh), 5.5rem);
-  line-height: 1;
-  letter-spacing: normal;
-}
-
-.episodes__slide[data-hot] {
-  color: var(--c-pink);
-}
 
 .episodes__choose {
   margin: clamp(6px, 1vw, 14px) 0 0;
@@ -1852,7 +1794,13 @@ body::-webkit-scrollbar {
      ten-line stack: the copy sat two hundred pixels below the collage it is
      written about, with nothing in between. */
   grid-row: 2;
-  max-width: 54ch;
+  /* The full column, which is the collage's own width. It was capped at 54ch —
+     a reading measure — and that is the right instinct for a paragraph sitting
+     on a page, but this one sits UNDER a 976-wide collage and inside a panel of
+     its own. Short lines left the panel stopping two thirds of the way across
+     and the composition looked unfinished on the right. The panel is a piece of
+     the layout here, not a column of prose, so it takes the layout's width. */
+  max-width: none;
   margin: clamp(24px, 3cqw, 52px) 0 0;
   padding: clamp(18px, 2.2cqw, 32px) clamp(20px, 2.6cqw, 38px);
   background: #17111f;

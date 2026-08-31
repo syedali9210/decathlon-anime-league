@@ -50,24 +50,6 @@ const JOURNEY = 2.8;
 /** The story the cards lead to. */
 const STORY = ".ground";
 
-/**
- * The section announces itself one line at a time before it shows anything.
- * Each of these takes the middle of the screen alone and clears out before the
- * next arrives — a title card sequence, not a list assembling itself.
- *
- * The claims are repeated from `.episodes__sub` on purpose: this is a
- * presentation of the copy, and the paragraph below is the copy. The relay is
- * `aria-hidden`, so assistive tech reads the sentence once, from the paragraph
- * that stays on the page.
- */
-const RELAY = [
-  { id: "title", text: TITLE },
-  { id: "sports", text: "5 sports" },
-  { id: "leagues", text: "5 leagues" },
-  { id: "character", text: "One main character" },
-  { id: "you", text: "YOU", hot: true },
-];
-
 /** The eight-pointer from `card-chrome.svg`, flanking the divider as on the board. */
 /** The divider label cycles through these, forever. */
 const PHRASES = [
@@ -171,190 +153,103 @@ function Card({ ep }: { ep: (typeof EPISODES)[number] }) {
 }
 
 /**
- * How the pinned window is divided. The intro takes the front of it, the deal
- * picks up after a short gap, and what is left at the end is the hold that
- * gives the landed deck a beat before the section scrolls on.
+ * How the pinned window is divided, now that the deal is the only thing in it.
+ *
+ * The header used to take nearly half of this — the relay was scrubbed, so its
+ * beats had to be BOUGHT in scroll — and that was the extra length the section
+ * carried. The header plays on its own clock and spends nothing, so the front
+ * of the window is a short beat to read it in and the rest is the deal.
  */
-// The relay no longer spends this — it plays on its own clock and this is not
-// its `end` any more. What the share still does is hold the front of the pinned
-// window BACK from the deal, which gives the sequence room to finish before the
-// cards start moving. It is a buffer now rather than a budget.
-const INTRO_SPAN = 0.46;
-// The mark the deal picks up on. The row is revealed by the relay's last frame
-// and by this trigger's own `onEnter`, whichever arrives first — see the note
-// on that handler.
-const DEAL_AT = INTRO_SPAN;
-// Widened as the intro gave scroll back: the deal is the payoff and now takes
-// more than a third of the pinned window instead of a quarter of it, so the
-// cards land at a readable pace out of a much shorter section.
-const DEAL_SPAN = 0.36;
+// Just enough that the header is read before the first card moves, rather than
+// the deal starting under it.
+const DEAL_AT = 0.12;
+// The deal is the only thing left that needs scroll, so it takes most of what
+// there is. What remains at the end is the hold that gives the landed deck a
+// beat before the section scrolls on.
+const DEAL_SPAN = 0.62;
 
 /**
- * The section announces itself before it shows anything, and it does it one line
- * at a time: the headline rides up from the foot of the screen, lands a letter
- * at a time in the middle of it, and leaves; then each claim takes that same
- * middle alone and clears out for the next; and only when the last of them has
- * gone does the real header rise into its layout place and hand over to the
- * deal.
+ * The header arrives, all of it at once.
  *
- * Scrubbed, not played. The beats are the reason the runway is as long as it is,
- * and a visitor scrolling back up should see the sequence run backwards rather
- * than find the section already assembled.
+ * This used to be a relay: five title cards taking the middle of an otherwise
+ * empty screen one at a time, the headline and then each claim in turn, with the
+ * real header rising into place only after the last of them had gone. It was
+ * seven seconds of reading one line at a time before the section showed
+ * anything, and it cost the runway most of its length to hold.
  *
- * The relay is its own stack of slides rather than the header's own elements
- * moved around. Centring the paragraph's spans one at a time would have meant
- * computing a per-span origin, translate and scale to put each in the middle and
- * then unwinding all of it to land back in a two-line paragraph. Five absolutely
- * placed slides that fade in and out cost a few lines of markup and no maths,
- * and the header is left alone to simply arrive at the end.
+ * Now the headline, the claims and the divider label simply appear together and
+ * stay. The animation is on the LETTERS — the title is already split per
+ * character for it — so it reads as type being set rather than a box fading up,
+ * and the block still arrives as one event.
+ *
+ * `from`, not `fromTo`: the landed state is what the stylesheet already
+ * describes, so nothing here has to put it back, and the page without this hook
+ * is the page with the header plainly visible. ScrollTrigger renders the `from`
+ * values immediately, so there is no flash of the finished header before it
+ * plays.
  */
-function useIntroSequence(
+function useHeaderReveal(
   section: React.RefObject<HTMLElement | null>,
-  relay: React.RefObject<HTMLElement | null>,
   title: React.RefObject<HTMLElement | null>,
   sub: React.RefObject<HTMLElement | null>,
   choose: React.RefObject<HTMLElement | null>,
 ) {
   useEffect(() => {
     const el = section.current;
-    const stage = relay.current;
     const head = title.current;
-    if (!el || !stage || !head) return;
-    // The slides are `opacity: 0` in the stylesheet and only this hook lifts
-    // them, so bailing out here leaves the page as its layout describes it:
-    // relay never seen, header and copy plainly visible.
+    if (!el || !head) return;
+    // Bailing out leaves the page as its layout describes it: header and copy
+    // plainly visible, nothing hidden waiting for a tween that never runs.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const runway = el.closest<HTMLElement>(".episodes-runway");
     if (!runway) return;
-    // The runway's pinned length used to set this sequence's `end`. It plays on
-    // its own clock now and only needs the runway as something to trigger off,
-    // so the measurement went with the scrub.
-
-    const group = [head, sub.current, choose.current].filter(
-      Boolean,
-    ) as HTMLElement[];
-    const row = el.querySelector<HTMLElement>(".episodes__row");
-
-    /**
-     * How far below its layout place the header waits. `offsetTop` and not a
-     * rect: the section is the offset parent and is pinned to the top of the
-     * window, so this is already the headline's position on screen — and unlike
-     * a rect it is not affected by the transform this very tween is writing.
-     */
-    const drop = () =>
-      window.innerHeight / 2 - (head.offsetTop + head.offsetHeight / 2);
 
     const ctx = gsap.context(() => {
-      const slides = [
-        ...stage.querySelectorAll<HTMLElement>(".episodes__slide"),
-      ];
-      const [lead, ...claims] = slides;
-      if (!lead) return;
+      const chars = head.querySelectorAll<HTMLElement>(".episodes__char");
+      const rest = [sub.current, choose.current].filter(Boolean);
 
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: runway,
-          // Not `top top`. Waiting for the runway to reach the top of the
-          // window meant waiting for the hero to finish sliding off it, and the
-          // whole of that slide showed an empty screen coming up underneath —
-          // the first thing after the hero was nothing at all. Started as the
-          // runway comes into view instead, so the headline is already falling
-          // in behind the hero's tail and the two sections hand over.
-          start: "top 85%",
-          // PLAYED, not scrubbed. The sequence used to be dragged by the
-          // scrollbar, so its speed was the reader's speed and its timing was
-          // whatever their trackpad did — a flick threw four title cards past
-          // in a frame, and a slow drag left a word hanging mid-move. It runs on
-          // its own clock now: scroll only says WHEN it starts.
-          //
-          // Reset on the way back up rather than left finished, so a reader who
-          // scrolls back sees it again instead of finding the section already
-          // assembled. No `end` and no scrub, so neither is doing anything.
+          // Not `top top`. Waiting for the runway to reach the top of the window
+          // meant waiting for the hero to finish sliding off it, and the whole
+          // of that slide showed an empty screen coming up underneath. Started
+          // as the runway comes into view instead, so the two sections hand
+          // over.
+          start: "top 78%",
+          // Played on its own clock; scroll only says when. Reset on the way
+          // back up so a reader who scrolls back sees it set itself again.
           toggleActions: "play none none reset",
           invalidateOnRefresh: true,
         },
       });
 
-      // The header waits out the whole relay, low and invisible. `opacity`
-      // rather than `autoAlpha`: the paragraph is the copy of record, and
-      // `visibility: hidden` would take it out of the accessibility tree for
-      // the length of the sequence.
-      //
-      // The deck waits with it. Hiding the ROW and not the cards is the whole
-      // point: the deal staggers its five targets, so at its own progress 0
-      // four of them have not been rendered yet and are sitting exactly where
-      // the layout puts them — in a row, in plain sight, behind the titles.
-      // Nothing done to the cards can fix that; the container has to go.
-      tl.set(row, { autoAlpha: 0 }, 0)
-        .set(group, { opacity: 0, y: drop }, 0)
-        /**
-         * Slides up into the middle and stops. It used to fall from half a
-         * screen above at 3.2x its own size, which is a different animation
-         * from the four claims that follow it — the sequence opened on a set
-         * piece and then settled into something plainer, and the join showed.
-         *
-         * The same move as the claims now, only longer: the headline is the
-         * line that introduces them, not a separate event.
-         */
-        .fromTo(
-          lead,
-          { autoAlpha: 0, y: 70 },
-          { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
-          0,
-        )
-        // Held at rest long enough to be read, then out the way it came — the
-        // same 70 it arrived on, so the whole relay travels one direction.
-        .to(
-          lead,
-          { autoAlpha: 0, y: -70, duration: 0.5, ease: "power2.in" },
-          1.9,
-        );
-
-      // Each claim rises into the middle, holds, and leaves upward — so the
-      // whole relay travels one way and reads as a single move rather than four
-      // separate entrances.
-      //
-      // These are SECONDS now. Under a scrub the numbers were only ratios of
-      // each other and the scroll range set the pace, so the timeline could run
-      // to fourteen of them and nobody noticed; played, fourteen seconds is a
-      // section that holds the reader hostage. Retimed to about seven, with each
-      // claim up for roughly six tenths of a second before it starts to leave —
-      // enough for three words, which is all any of them is.
-      const FIRST = 2.2;
-      const EVERY = 1;
-      claims.forEach((c, i) => {
-        const at = FIRST + i * EVERY;
-        tl.fromTo(
-          c,
-          { autoAlpha: 0, y: 60 },
-          { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out" },
-          at,
-        ).to(
-          c,
-          { autoAlpha: 0, y: -60, duration: 0.35, ease: "power2.in" },
-          at + 0.6,
-        );
-      });
-
-      // Everything the relay was standing in for, arriving at once and rising
-      // into place — which is what clears the room the deck needs.
-      const settle = FIRST + claims.length * EVERY + 0.3;
-      tl.to(
-        group,
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
-        settle,
-      )
-        // Handed over on the relay's last frame. The deck is no longer waiting
-        // for a scroll position, so the deal's own trigger reveals the row too
-        // — see `useCardDeal`. Whichever happens first wins, which is what
-        // stops a fast scroller reaching the deal while the row is still
-        // hidden by a sequence that has not finished playing.
-        .set(row, { autoAlpha: 1 }, settle + 0.6);
+      // A tight stagger across the characters — 18ms, so twenty-six of them take
+      // under half a second and the line reads as one word arriving rather than
+      // as letters queueing. The copy under it follows while the last few are
+      // still landing, which is what keeps the whole header one event.
+      tl.from(chars, {
+        autoAlpha: 0,
+        y: 26,
+        duration: 0.5,
+        ease: "power2.out",
+        stagger: 0.018,
+      }).from(
+        rest,
+        {
+          autoAlpha: 0,
+          y: 18,
+          duration: 0.45,
+          ease: "power2.out",
+          stagger: 0.08,
+        },
+        0.3,
+      );
     }, el);
 
     return () => ctx.revert();
-  }, [section, relay, title, sub, choose]);
+  }, [section, title, sub, choose]);
 }
 
 /**
@@ -437,6 +332,16 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
         };
         const runway = el.closest<HTMLElement>(".episodes-runway");
 
+        // The row waits out of sight until the deal begins. This used to be the
+        // intro relay's job — it hid the row on its first frame and put it back
+        // on its last — but the relay is gone, and the reason for it never was
+        // the relay: a staggered tween has not started its later targets at
+        // progress 0, so four of the five cards carry no transform and sit in
+        // plain sight, in a row, exactly where the layout puts them. Nothing
+        // done to the cards can fix that; the container has to go. So the deal
+        // now owns both ends of it, which is where it always belonged.
+        gsap.set(row, { autoAlpha: 0 });
+
         gsap.fromTo(
           ".ecard",
           {
@@ -488,13 +393,9 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
                   DEAL_SPAN,
               scrub: 0.6,
               invalidateOnRefresh: true,
-              // The relay hides the row and reveals it again on its own last
-              // frame. That was safe while the relay was scrubbed, because the
-              // same scroll drove both and the deal could not start early. Now
-              // the relay runs on a clock, so a reader who flicks past can be
-              // here while it is still mid-sequence — and the deck would deal
-              // itself behind a hidden row. Whichever of the two gets here
-              // first shows it.
+              // The other end of the hide above: the row comes back the moment
+              // the deal starts, which is the first frame a card is anywhere
+              // other than where the layout puts it.
               onEnter: () => gsap.set(row, { autoAlpha: 1 }),
               onLeave: () => el.toggleAttribute("data-landed", true),
               onEnterBack: () => el.toggleAttribute("data-landed", false),
@@ -672,9 +573,8 @@ export function Episodes() {
   const title = useRef<HTMLHeadingElement>(null);
   const label = useRef<HTMLParagraphElement>(null);
   const sub = useRef<HTMLParagraphElement>(null);
-  const relay = useRef<HTMLDivElement>(null);
   const row = useRef<HTMLUListElement>(null);
-  useIntroSequence(section, relay, title, sub, label);
+  useHeaderReveal(section, title, sub, label);
   useCardDeal(section);
   useLabelCycle(label);
 
@@ -746,21 +646,6 @@ export function Episodes() {
             <path d={SPARK} fill="currentColor" />
           </svg>
         </p>
-
-        {/* Over the pinned screen, not in its flow: the relay has to sit in the
-            middle of the window whatever the header underneath it is doing. */}
-        <div className="episodes__relay" aria-hidden="true" ref={relay}>
-          {RELAY.map((r) => (
-            <span
-              className="episodes__slide"
-              key={r.id}
-              data-slide={r.id}
-              data-hot={r.hot || undefined}
-            >
-              {r.text}
-            </span>
-          ))}
-        </div>
 
         <ul className="episodes__row" ref={row}>
           {EPISODES.map((ep) => (
