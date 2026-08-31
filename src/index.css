@@ -810,12 +810,12 @@ body::-webkit-scrollbar {
   text-wrap: balance;
   color: #fff;
   opacity: 0;
-  /* Five elements, and the lead one is tweened from 3.2x scale: without a
-     promoted layer the browser re-rasterises the glyphs every frame of that
-     move, which is the stutter the sequence had. Unlike the 74 characters below
-     — where the same promotion would cost more than it saves — this is five
-     boxes, held for the length of one section. */
-  will-change: transform, opacity;
+  /* No `will-change`. It was here for the headline's old 3.2x scale, which does
+     re-rasterise glyphs every frame and does need a promoted layer. The slides
+     only translate now, and a translate composites without being asked — so
+     this would be five permanent textures bought for a move that never needed
+     them. The hero paid that bill for nineteen layers; this section is not
+     going to open a second one. */
 }
 
 /* The headline keeps the size and measure it has in the layout — this is the

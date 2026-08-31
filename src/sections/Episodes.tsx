@@ -284,26 +284,25 @@ function useIntroSequence(
       tl.set(row, { autoAlpha: 0 }, 0)
         .set(group, { opacity: 0, y: drop }, 0)
         /**
-         * Falls in from above the screen at a size far past its own and settles
-         * to it in the middle — the headline arriving rather than fading up.
-         * One move on the whole block: a per-character stagger on top of a
-         * scale this large reads as two effects fighting, and the scale is the
-         * one carrying the beat.
+         * Slides up into the middle and stops. It used to fall from half a
+         * screen above at 3.2x its own size, which is a different animation
+         * from the four claims that follow it — the sequence opened on a set
+         * piece and then settled into something plainer, and the join showed.
          *
-         * `power3.out` because it is an entrance: nearly all the travel happens
-         * at the front, so the size is legible almost immediately and the last
-         * of the movement is a settle rather than a slide.
+         * The same move as the claims now, only longer: the headline is the
+         * line that introduces them, not a separate event.
          */
         .fromTo(
           lead,
-          { autoAlpha: 0, scale: 3.2, y: () => -window.innerHeight * 0.5 },
-          { autoAlpha: 1, scale: 1, y: 0, duration: 2.2, ease: "power3.out" },
+          { autoAlpha: 0, y: 70 },
+          { autoAlpha: 1, y: 0, duration: 1.1, ease: "power2.out" },
           0,
         )
-        // Held at rest long enough to be read before it goes.
+        // Held at rest long enough to be read, then out the way it came — the
+        // same 70 it arrived on, so the whole relay travels one direction.
         .to(
           lead,
-          { autoAlpha: 0, y: -90, duration: 0.75, ease: "power2.in" },
+          { autoAlpha: 0, y: -70, duration: 0.75, ease: "power2.in" },
           3.5,
         );
 
