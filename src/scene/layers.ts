@@ -61,6 +61,24 @@ export type LayerCaption = {
   lines: string[]
   /** [left, top, width], percentages of the content box. */
   box: [string, string, string]
+  /**
+   * A standing call to action under the caption, on the plate the caption is
+   * printed on.
+   *
+   * It belongs to the caption rather than to the layer so that it rides the
+   * artwork's own transform — the medallion drifts with the pointer and shrinks
+   * under `--condense`, and a button positioned against the stage would come
+   * unstuck from the plate it is sitting on at both.
+   *
+   * Not to be confused with the hotspots that used to be here. Those were
+   * invisible boxes over the artwork; this is a button that says what it is.
+   */
+  cta?: {
+    href: string
+    label: string
+    /** Its own centre and top, as percentages of the content box. */
+    at: [string, string]
+  }
 }
 
 export type Layer = {
@@ -102,6 +120,20 @@ export const LAYERS: Layer[] = [
       // Under the league's name, inside the cream. The medallion's own box is
       // the link's above; this sits in its lower third.
       box: ['32.4%', '49.4%', '35%'],
+      // Directly under the list of sports, centred on the medallion's own
+      // centre — the same 49.9% the badge turns and shrinks about.
+      //
+      // 54.15% is measured, not chosen. The cream plate inside the badge is the
+      // 443x280 `#fde9bb` shape, and between the foot of the caption and its own
+      // lower edge there are exactly 42px at full size. The pill is 25 of them,
+      // so this centres it in what is left: 55.8% hung 12px past the cream onto
+      // the red flame, and 53.6% cleared it but sat against the caption with all
+      // the slack underneath.
+      cta: {
+        href: 'https://www.decathlon.in/',
+        label: 'Shop the collection',
+        at: ['49.9%', '54.15%'],
+      },
     },
     depth: 0.26,
     down: -1,

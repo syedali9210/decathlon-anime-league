@@ -440,6 +440,61 @@ body::-webkit-scrollbar {
   pointer-events: none;
 }
 
+/* The standing shop button on the medallion, under the list of sports.
+   The site's own pill — #ff5ec2, a hard 2px rule, a black offset with no blur —
+   so it reads as the same control as the one fixed to the corner rather than as
+   a second idea. Sized in `cqw` of the ARTWORK like the caption above it, not
+   of the window: it is printed on the plate, so it has to shrink with the plate
+   when the hero condenses, and a viewport unit would leave it growing off a
+   medallion that is getting smaller.
+   `.layer` is `pointer-events: none` so the artwork never swallows a click;
+   this earns them back for the one thing on it that is a control. */
+.layer__cta {
+  position: absolute;
+  translate: -50% 0;
+  display: inline-flex;
+  align-items: center;
+  /* Trimmed to the room that exists. The cream leaves 42px under the caption at
+     full size and the first draft stood 32px tall, which put its shadow on the
+     flame; this is about 29 and sits in the middle of the gap. Matched to the
+     caption's own size for the same reason — a button larger than the copy it
+     follows would be the loudest thing on a plate whose job is the wordmark. */
+  padding: 0.34em 1em 0.4em;
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  font-size: clamp(6px, 0.86cqw, 14px);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  color: #161616;
+  background: #ff5ec2;
+  border: 2px solid #000;
+  border-radius: 999px;
+  filter: drop-shadow(-2px 2px 0 #000);
+  pointer-events: auto;
+  transition:
+    transform 160ms ease-out,
+    background-color 160ms ease-out;
+}
+
+.layer__cta:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .layer__cta:hover {
+    background: var(--c-gold);
+  }
+}
+
+.layer__cta:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
 .layer > svg {
   display: block;
   width: 100%;

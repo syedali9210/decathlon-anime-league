@@ -19,7 +19,9 @@ gsap.registerPlugin(ScrollTrigger)
  * for the whole page and only has to know which stop is next.
  */
 const STOPS = [
-  { sel: '.episodes-runway', label: 'Shop the drop' },
+  // "The Drop", not "Shop the drop" — the cue already draws an arrow beside
+  // every label, so the word Shop was doing the arrow's job twice over.
+  { sel: '.episodes-runway', label: 'The Drop' },
   { sel: '.products', label: 'Shop the tees' },
   { sel: '.ground', label: 'The story' },
   { sel: '.lineup', label: 'Shop the line-up' },

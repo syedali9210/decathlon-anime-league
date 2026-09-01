@@ -82,6 +82,24 @@ export function Stage() {
                       </Fragment>
                     ))}
                   </p>
+
+                  {/* The standing shop button, on the plate. `.layer` is
+                      `pointer-events: none` so the artwork never swallows a
+                      click; this one earns them back. */}
+                  {l.caption.cta && (
+                    <a
+                      className="layer__cta"
+                      href={l.caption.cta.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        left: l.caption.cta.at[0],
+                        top: l.caption.cta.at[1],
+                      }}
+                    >
+                      {l.caption.cta.label}
+                    </a>
+                  )}
                 </div>
               )}
             </Fragment>
