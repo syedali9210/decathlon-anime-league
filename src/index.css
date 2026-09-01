@@ -2016,7 +2016,15 @@ body::-webkit-scrollbar {
   transition: opacity 320ms ease 120ms;
 }
 
-.lineup__item[data-open] .lineup__row {
+/* Two conditions, not one. The item being open is not enough: exactly one item
+   is ALWAYS open — that is what keeps the section's height stable for the
+   stepping to measure against — so the first card was on screen from the
+   instant the section's top edge crossed the fold, revealing itself in a strip
+   at the bottom of the window while the reader was still scrolling toward it.
+   Waiting for the section's own `data-shown` as well holds it until the
+   line-up is properly present, which is the same flag every other section's
+   contents arrive on. */
+.lineup[data-shown] .lineup__item[data-open] .lineup__row {
   opacity: 1;
 }
 

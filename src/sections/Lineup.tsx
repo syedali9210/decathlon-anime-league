@@ -88,8 +88,16 @@ const shotAlt = (it: { name: string; sport: string; kind: string }) =>
  *
  * `bottom 65%` finishes the sequence with a third of the window still on the
  * foot of the list, rather than after the section has gone.
+ *
+ * The start used to be `top 85%`, which put the first item's whole turn behind
+ * the reader. Measured, the six boundaries landed with the section's top at
+ * 85%, 53%, 21%, -11%, -43% and -74% of the window: item one opened while the
+ * section was a strip at the bottom of the screen and was already closing by
+ * the time anyone was looking at it, and half the list ran after the heading
+ * had gone off the top. `top 55%` puts the first card's turn where the reader
+ * actually is.
  */
-const RANGE_START = 'top 85%'
+const RANGE_START = 'top 55%'
 const RANGE_END = 'bottom 65%'
 
 const SCATTER = [
