@@ -37,7 +37,10 @@ const PRODUCTS = [
   { id: 'apex-kick', name: 'Apex-Kick', photo: apexKick, small: apexKickSm, width: 480, sport: 'football', kind: 'tee', price: TEE },
   { id: 'sky-smash', name: 'Sky-Smash', photo: skySmash, small: skySmashSm, width: 480, sport: 'badminton', kind: 'tee', price: TEE },
   { id: 'spin-ignite', name: 'Spin-Ignite', photo: spinIgnite, small: spinIgniteSm, width: 480, sport: 'tennis', kind: 'tee', price: TEE },
-  { id: 'league-cap', name: 'Cap', photo: leagueTee, small: leagueTeeSm, width: 480, sport: 'basketball', kind: 'cap', price: CAP },
+  // Tennis, not basketball: the caps in this shot wear the flaming tennis ball
+  // and the tee behind it is Spin-Ignite. The sport only feeds the alt text, so
+  // the mislabel was invisible until the line-up started naming caps by it.
+  { id: 'league-cap', name: 'Cap', photo: leagueTee, small: leagueTeeSm, width: 480, sport: 'tennis', kind: 'cap', price: CAP },
   { id: 'rim-crush', name: 'Rim-Crush', photo: rimCrush, small: rimCrushSm, width: 480, sport: 'basketball', kind: 'tee', price: TEE },
 ]
 
@@ -55,6 +58,19 @@ const PRODUCTS = [
  */
 const PHOTO_SIZES =
   '(max-width: 900px) 39vw, (min-width: 1600px) 373px, 25vw'
+
+/**
+ * What a sport is played on. Football is not played on a court.
+ *
+ * The line-up keeps its own copy of this rather than either section importing
+ * from the other: it is four words of English grammar, not shared state, and a
+ * catalogue section reaching into a list section for a noun is a worse
+ * dependency than a duplicated map.
+ */
+const GROUND: Record<string, string> = {
+  cricket: 'ground',
+  football: 'pitch',
+}
 
 /**
  * The flaming props that float over the cards. Inlined rather than <img> so the
@@ -109,13 +125,20 @@ export function Products() {
                   card on a phone — see the container query in the stylesheet. */}
               <div className="pcard__plate">
                 {/* Photo sits under the chrome and is clipped to the chamfered
-                    window the artwork cuts for it — see --pcard-window. */}
+                    window the artwork cuts for it — see --pcard-window.
+                    The cap's name IS "Cap", so its kind cannot be appended to
+                    it — that read "Cap cap, worn on a tennis court". Only a tee
+                    is named something other than what it is. */}
                 <img
                   className="pcard__photo"
                   src={p.photo}
                   srcSet={`${p.small} 320w, ${p.photo} ${p.width}w`}
                   sizes={PHOTO_SIZES}
-                  alt={`${p.name} ${p.kind}, worn on a ${p.sport} court`}
+                  alt={
+                    p.kind === 'cap'
+                      ? `The league ${p.sport} cap`
+                      : `${p.name} tee, worn on a ${p.sport} ${GROUND[p.sport] ?? 'court'}`
+                  }
                   loading="lazy"
                   decoding="async"
                 />

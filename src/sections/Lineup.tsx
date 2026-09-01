@@ -7,6 +7,7 @@ import apexKick from '../assets/products/apex-kick.webp'
 import skySmash from '../assets/products/sky-smash.webp'
 import spinIgnite from '../assets/products/spin-ignite.webp'
 import rimCrush from '../assets/products/rim-crush.webp'
+import leagueTee from '../assets/products/league-tee.webp'
 import capBadminton from '../assets/products/cap-badminton.webp'
 import capBasketball from '../assets/products/cap-basketball.webp'
 import capFootball from '../assets/products/cap-football.webp'
@@ -48,9 +49,17 @@ const RAW_GROUPS = [
     id: 'caps',
     label: 'Caps',
     items: [
-      { id: 'cap-badminton', name: 'Badminton', photo: capBadminton, sport: 'badminton', kind: 'cap' },
-      { id: 'cap-basketball', name: 'Basketball', photo: capBasketball, sport: 'basketball', kind: 'cap' },
+      // Ordered to mirror the tees above — football, badminton, tennis,
+      // basketball — so the two groups read down the page the same way. There
+      // is no cricket cap in the shoot.
       { id: 'cap-football', name: 'Football', photo: capFootball, sport: 'football', kind: 'cap' },
+      { id: 'cap-badminton', name: 'Badminton', photo: capBadminton, sport: 'badminton', kind: 'cap' },
+      // `league-tee.webp` is the TENNIS cap despite its name and despite the
+      // `sport: 'basketball'` it carried until now: the caps in it wear the
+      // flaming tennis ball and the tee behind is Spin-Ignite. That mislabel is
+      // what made it look like a duplicate of the basketball shot.
+      { id: 'cap-tennis', name: 'Tennis', photo: leagueTee, sport: 'tennis', kind: 'cap' },
+      { id: 'cap-basketball', name: 'Basketball', photo: capBasketball, sport: 'basketball', kind: 'cap' },
     ],
   },
 ]
