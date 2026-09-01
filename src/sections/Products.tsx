@@ -18,6 +18,7 @@ import propShuttle from '../assets/products/prop-shuttle.svg?raw'
 import propTennisball from '../assets/products/prop-tennisball.svg?raw'
 import { namespaceIds } from '../lib/inlineSvg'
 import { animateProp } from './propMotion'
+import { shopLink } from './shopLinks'
 
 /**
  * The Figma cards all carry the same placeholder copy — "CRICK - STRYKE BLACK"
@@ -143,6 +144,26 @@ export function Products() {
                   decoding="async"
                 />
                 <img className="pcard__chrome" src={chrome} alt="" aria-hidden="true" />
+
+                {/* The whole plate is the way to the product page. Laid over the
+                    artwork rather than wrapped around it: the photo and the
+                    chrome are both absolutely placed inside this box, and an
+                    anchor around them would have to become the positioning
+                    context itself.
+                    Only the tees have pages — see `shopLink`, which is where
+                    that rule lives so a cap can never inherit its sport's. */}
+                {shopLink(p) && (
+                  <a
+                    className="pcard__link"
+                    href={shopLink(p)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="sr-only">
+                      Shop {p.name} at Decathlon
+                    </span>
+                  </a>
+                )}
               </div>
 
               <div className="pcard__meta">

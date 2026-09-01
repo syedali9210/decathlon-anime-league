@@ -16,6 +16,7 @@ import helmet from '../assets/lineup/helmet.webp'
 import racket from '../assets/lineup/racket.webp'
 import propBall from '../assets/lineup/prop-ball.svg'
 import propShuttle from '../assets/lineup/prop-shuttle.svg'
+import { shopLink } from './shopLinks'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -272,6 +273,25 @@ export function Lineup() {
                           alt=""
                           aria-hidden="true"
                         />
+
+                        {/* Only the tees have product pages — see `shopLink`.
+                            `tabIndex` follows the open item because a closed
+                            panel is collapsed to zero height and clipped, not
+                            removed: without this, tabbing through the line-up
+                            would stop at nine invisible links. */}
+                        {shopLink(it) && (
+                          <a
+                            className="lineup__link"
+                            href={shopLink(it)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            tabIndex={it.at === open ? undefined : -1}
+                          >
+                            <span className="sr-only">
+                              Shop {it.name} at Decathlon
+                            </span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>

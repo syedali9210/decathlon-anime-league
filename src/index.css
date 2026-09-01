@@ -1210,6 +1210,24 @@ body::-webkit-scrollbar {
   clip-path: var(--photo-chamfer);
 }
 
+/* The whole plate is the link to the product page — see `shopLink`, and note
+   that only the tees have one. Invisible on purpose: the card IS the
+   affordance, and the site's cursor already morphs to SHOP over anything
+   matching `a[href]`, which this is. */
+.pcard__link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  border-radius: inherit;
+}
+
+/* Keyboard users get the outline the card cannot give them. */
+.pcard__link:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
 /* One shared file for all six cards: plate rule, corner brackets, checker
    blocks, sparkles and both logos. */
 .pcard__chrome {
@@ -2068,6 +2086,9 @@ body::-webkit-scrollbar {
   max-width: 900px;
   margin: clamp(16px, 2.4vw, 38px) auto;
   opacity: 0;
+  /* A closed panel is collapsed to zero height and clipped, not removed, so its
+     card still answers the pointer where the open one overlaps it. */
+  pointer-events: none;
   transition: opacity 320ms ease 120ms;
 }
 
@@ -2081,6 +2102,22 @@ body::-webkit-scrollbar {
    contents arrive on. */
 .lineup[data-shown] .lineup__item[data-open] .lineup__row {
   opacity: 1;
+  pointer-events: auto;
+}
+
+/* The card is the link to the product page — the tees only, same rule as the
+   catalogue grid's. */
+.lineup__link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  border-radius: inherit;
+}
+
+.lineup__link:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
 }
 
 .lineup__index {
