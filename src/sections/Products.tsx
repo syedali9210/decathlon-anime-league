@@ -56,8 +56,6 @@ const PRODUCTS = [
 const PHOTO_SIZES =
   '(max-width: 900px) 39vw, (min-width: 1600px) 373px, 25vw'
 
-const COLOURWAYS = ['#e4e4e4', '#0087c0']
-
 /**
  * The flaming props that float over the cards. Inlined rather than <img> so the
  * ball can be spun and the flame vectors flickered independently — together
@@ -145,11 +143,6 @@ export function Products() {
                   </span>
                   <span className="pcard__price">₹ {p.price}</span>
                 </div>
-                <ul className="pcard__swatches" aria-label="Colours">
-                  {COLOURWAYS.map((c) => (
-                    <li key={c} style={{ background: c }} />
-                  ))}
-                </ul>
               </div>
             </li>
           ))}

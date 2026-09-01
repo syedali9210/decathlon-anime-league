@@ -162,15 +162,21 @@ function Card({ ep }: { ep: (typeof EPISODES)[number] }) {
  */
 // Just enough that the header is read before the first card moves, rather than
 // the deal starting under it.
-const DEAL_AT = 0.1;
-// The deal is the only thing left that needs scroll, so it takes most of what
-// there is — and it was worth giving it more. Five staggered cards across 0.62
-// of the window worked out at about ninety pixels of scroll each, which is not
-// enough travel to read as dealing; it read as snapping. Widened rather than
-// lengthening the runway, because the runway is short on purpose now. What
-// remains at the end is the hold that gives the landed deck a beat before the
-// section scrolls on.
-const DEAL_SPAN = 0.75;
+const DEAL_AT = 0.06;
+// The deal is the only thing left that needs scroll, so it takes nearly all of
+// it.
+//
+// Smoothness in a scrubbed animation is not an easing choice, it is scroll
+// distance per unit of motion — and each card here moves a long way: most of a
+// card width across, most of a card height up, eighteen degrees of tilt, a
+// scale, and a hundred and eighty degrees of flip. Squeezed into a short range
+// that cannot be smooth however it is eased, because the reader's own scroll
+// resolution becomes the frame rate. So the range keeps widening: 0.62, then
+// 0.75, now 0.82 of a window that is itself longer — about 800px of scroll for
+// the deal where it started with 458.
+// What remains at the end is the hold that gives the landed deck a beat before
+// the section scrolls on.
+const DEAL_SPAN = 0.82;
 
 /**
  * The header arrives, all of it at once.
@@ -405,11 +411,13 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
                   ? runway.offsetHeight - window.innerHeight
                   : window.innerHeight) *
                   DEAL_SPAN,
-              // Twice the catch-up. Scrub is not the deal's speed — the range
-              // is — but it is what decides whether the deck glides to the
-              // scroll position or is dragged frame by frame with it, and at
-              // 0.6 every twitch of a trackpad was arriving in the cards.
-              scrub: 1.2,
+              // Scrub is not the deal's speed — the range is — but it is what
+              // decides whether the deck glides to the scroll position or is
+              // dragged frame by frame with it. At 0.6 every twitch of a
+              // trackpad arrived in the cards; 1.6 is enough catch-up to
+              // swallow a wheel's steps without the deck feeling detached from
+              // the hand moving it.
+              scrub: 1.6,
               invalidateOnRefresh: true,
               // The other end of the hide above: the row comes back the moment
               // the deal starts, which is the first frame a card is anywhere

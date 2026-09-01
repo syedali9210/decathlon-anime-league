@@ -494,8 +494,12 @@ body::-webkit-scrollbar {
      its own clock, so all of that length was scroll with nothing left in it.
      What remains is a short beat to read the header, the deal, and the hold
      that gives the landed deck a moment before the section scrolls on — see
-     DEAL_AT and DEAL_SPAN in Episodes.tsx, which divide it. */
-  height: 190svh;
+     DEAL_AT and DEAL_SPAN in Episodes.tsx, which divide it.
+     Back up from 190 to 220. That is not the dead scroll the relay used to
+     spend: a scrubbed deal is only as smooth as the distance it has to travel
+     in, and five cards moving that far need more than 190svh could give them.
+     Still well under the 300 it carried while the relay was here. */
+  height: 220svh;
   overflow: clip;
 }
 
@@ -1212,22 +1216,6 @@ body::-webkit-scrollbar {
   white-space: nowrap;
 }
 
-.pcard__swatches {
-  display: flex;
-  gap: 0.5em;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  flex-shrink: 0;
-  padding-top: 0.1em;
-}
-
-.pcard__swatches li {
-  width: 0.8em;
-  height: 0.8em;
-  border-radius: 50%;
-}
-
 /* ── floating props ──────────────────────────────────────────────────────── */
 
 /* Sized and placed against the grid, not the viewport, so they keep station
@@ -1420,13 +1408,6 @@ body::-webkit-scrollbar {
     text-overflow: ellipsis;
   }
 
-  /* The colourway dots go. On a 172px card they are two 5px circles, and the
-     28px they cost — their own width plus the gap — is the difference between
-     the name and the price sharing a line and not. They are back the moment
-     there is a card wide enough to hold both. */
-  .pcard__swatches {
-    display: none;
-  }
 }
 
 /* ── the ground ────────────────────────────────────────────────────────── */
