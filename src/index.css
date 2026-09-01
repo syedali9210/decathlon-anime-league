@@ -3426,7 +3426,15 @@ html[data-custom-cursor] * {
 .scrollcue {
   position: fixed;
   left: 50%;
-  bottom: var(--gutter);
+  /* Off the gutter by a pill's height, because the hero has artwork down there.
+     The flags layer stands on a gold Decathlon plate — measured, it runs 852 to
+     899 on a 932-tall window, which is 33 to 80px up from the foot — and a cue
+     sitting on the gutter alone landed in the middle of it and hid the mark
+     completely. This clears its top edge.
+     The phone wanted the same number for its own reason: the Shop pill takes
+     the middle of the foot there (see `.shopbtn`), and the cue sits on the shelf
+     above it. Two reasons, one shelf. */
+  bottom: calc(var(--gutter) + 56px);
   z-index: 99;
 
   display: flex;
@@ -3508,11 +3516,10 @@ html[data-custom-cursor] * {
   outline-offset: 3px;
 }
 
-/* The Shop pill takes the middle of the foot on a phone — see `.shopbtn` — so
-   the cue sits on the shelf above it rather than under it. */
+/* Only the size changes here now. The shelf the cue sits on is the same at every
+   width — see the note on `bottom` above, which explains both reasons for it. */
 @media (max-width: 640px) {
   .scrollcue {
-    bottom: calc(var(--gutter) + 56px);
     min-height: 36px;
     font-size: 15px;
   }
