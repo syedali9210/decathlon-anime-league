@@ -289,20 +289,35 @@ body::-webkit-scrollbar {
      bottom edge are composition, the sky above is not, so the crop is taken off
      the top. The 0.6% bleed is headroom for the pointer sweep nudging the court
      upward.
-     Off the top ONLY UP TO A POINT, though. How much cover has to crop depends
-     entirely on the window's shape: at 1440x820 it is 65px and the sky can
-     absorb all of it, but at 1920x900 it is 283 and taking that off the top put
-     the league medallion — the banner's own title — 84px above the frame and
-     cut it in half. So a share of the overflow is handed back to the bottom,
-     which is what `--art-drop` pushes down by. Capped, because past that the
-     ribbon starts to go and the ribbon is the thing the baseline anchor exists
-     to protect. Measured, that is a long way off: the medallion and the ribbon
-     are the same layer, and its foot still clears the frame by 283px at
-     1920x900 and 422 at 2560x1080, so there is room to hand back more than the
-     top can spare. */
+     Off the top ONLY UP TO A POINT, though. On a wide, short window the cover
+     crops more than the sky has to give and the league medallion — the banner's
+     own title — goes over the frame's top edge: 106px of the flame at 1920x900,
+     258 at 2560x1080. So the art is pushed back down.
+
+     By exactly as much as the medallion needs, and no more. This used to hand
+     the bottom a flat 62% of the overflow, which is a share of the wrong thing:
+     it pays out whenever the art is taller than the frame, including when the
+     medallion is nowhere near the edge. On a 1080-tall window it spent 97px
+     buying headroom the badge already had 70px of — and 97px is the whole
+     Decathlon plate at the foot, so the reader got an 8px sliver of a 70px
+     mark. The old note here said the foot had room to spare, but it measured
+     the BADGE layer's foot. The plate and the checkered flags are the `flags`
+     layer, which sits lower, and they are what the drop was really spending.
+
+     `--art-crown` is where the flame's top lands with the art left standing on
+     its baseline, measured down from the frame's top; negative means it is cut.
+     0.814 is the share of the artboard below that crown — the flame's top is
+     18.56% down the 903-tall box, measured, not chosen. The drop is then just
+     the shortfall plus 28px, so the flame clears the edge rather than kissing
+     it, and nothing at all when there is no shortfall. Still capped: past 300px
+     the ribbon starts to go, and the ribbon is what the baseline anchor exists
+     to protect. */
   --art-cover: max(100cqh, calc(100cqw * 903 / 1495));
-  --art-over: max(0px, calc(var(--art-cover) * var(--overscan) - 100cqh));
-  --art-drop: min(calc(var(--art-over) * 0.62), 300px);
+  --art-crown: calc(
+    100cqh + 0.006 * var(--art-cover) - 0.814 * var(--overscan) *
+      var(--art-cover)
+  );
+  --art-drop: clamp(0px, calc(28px - var(--art-crown)), 300px);
   transform: translate(-50%, calc(0.6% + var(--art-drop))) scale(var(--overscan));
   /* So the words printed on the medallion can be sized against the ARTWORK.
      `.hero__stage` is a container too, but it is the window's box — the art is
@@ -3426,15 +3441,35 @@ html[data-custom-cursor] * {
 .scrollcue {
   position: fixed;
   left: 50%;
-  /* Off the gutter by a pill's height, because the hero has artwork down there.
-     The flags layer stands on a gold Decathlon plate — measured, it runs 852 to
-     899 on a 932-tall window, which is 33 to 80px up from the foot — and a cue
-     sitting on the gutter alone landed in the middle of it and hid the mark
-     completely. This clears its top edge.
-     The phone wanted the same number for its own reason: the Shop pill takes
-     the middle of the foot there (see `.shopbtn`), and the cue sits on the shelf
-     above it. Two reasons, one shelf. */
-  bottom: calc(var(--gutter) + 56px);
+  /* Off the foot far enough to clear the hero's artwork, because the flags
+     layer stands on a gold Decathlon plate down there and a cue on the gutter
+     alone lands in the middle of it and hides the mark.
+
+     Keyed to the artwork rather than set as a constant. A constant was tried
+     and it cannot hold: the plate's height and its distance off the floor both
+     scale with the illustration, so 56px cleared it at 1060x932 and was 21px
+     short at 1920x1080. What IS constant is the plate's place in the art —
+     measured across six window shapes, its top sits 9.53% of the artwork's
+     height above the artwork's foot, varying only by the couple of pixels the
+     flags' idle float adds. The art stands on the frame's floor, so that share
+     plus the frame's own padding is where the plate's top lands, and 14px of
+     margin keeps the cue off it rather than against it.
+
+     `max()` is the same cover the illustration sizes itself by (see
+     `--art-cover`), rewritten in viewport units because this is fixed to the
+     window and cannot read the frame's container. The two agree: `.hero__stage`
+     is inset by `--frame-pad` on a full-width `100svh` hero.
+
+     The phone lands high on this too, which is what it wanted anyway: the Shop
+     pill takes the middle of the foot there (see `.shopbtn`) and the cue sits
+     on the shelf above it. */
+  bottom: calc(
+    var(--frame-pad) + 14px + 0.0953 *
+      max(
+        calc(100svh - 2 * var(--frame-pad)),
+        calc((100svw - 2 * var(--frame-pad)) * 903 / 1495)
+      )
+  );
   z-index: 99;
 
   display: flex;
