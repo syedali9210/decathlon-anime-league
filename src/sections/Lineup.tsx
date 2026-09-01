@@ -8,6 +8,7 @@ import skySmash from '../assets/products/sky-smash.webp'
 import spinIgnite from '../assets/products/spin-ignite.webp'
 import rimCrush from '../assets/products/rim-crush.webp'
 import leagueTee from '../assets/products/league-tee.webp'
+import capCricket from '../assets/products/cap-cricket.webp'
 import capBadminton from '../assets/products/cap-badminton.webp'
 import capBasketball from '../assets/products/cap-basketball.webp'
 import capFootball from '../assets/products/cap-football.webp'
@@ -27,11 +28,13 @@ gsap.registerPlugin(ScrollTrigger)
  * for the caps, which the grid above sells as one line and this list had no way
  * to hold at all.
  *
- * The caps are named by SPORT where the tees are named by league. They are the
- * league's caps, so naming them Sky-Smash, Rim-Crush and Apex-Kick would have
- * been just as true — and would have printed those three words twice each in
- * one list, once under each heading, with no way to tell which was the shirt.
- * The sport is the thing that actually differs between them.
+ * Both groups carry the same five league names in the same order. The caps were
+ * briefly named by sport — Badminton, Basketball — to avoid printing those five
+ * words twice in one list, but that was solving the wrong problem: the heading
+ * above each group already says which is which, and the numbering runs straight
+ * through, so a repeated name reads as the same league in a second material
+ * rather than as a duplicate. Naming them differently made the caps look like a
+ * separate range.
  */
 const RAW_GROUPS = [
   {
@@ -49,17 +52,17 @@ const RAW_GROUPS = [
     id: 'caps',
     label: 'Caps',
     items: [
-      // Ordered to mirror the tees above — football, badminton, tennis,
-      // basketball — so the two groups read down the page the same way. There
-      // is no cricket cap in the shoot.
-      { id: 'cap-football', name: 'Football', photo: capFootball, sport: 'football', kind: 'cap' },
-      { id: 'cap-badminton', name: 'Badminton', photo: capBadminton, sport: 'badminton', kind: 'cap' },
-      // `league-tee.webp` is the TENNIS cap despite its name and despite the
-      // `sport: 'basketball'` it carried until now: the caps in it wear the
-      // flaming tennis ball and the tee behind is Spin-Ignite. That mislabel is
-      // what made it look like a duplicate of the basketball shot.
-      { id: 'cap-tennis', name: 'Tennis', photo: leagueTee, sport: 'tennis', kind: 'cap' },
-      { id: 'cap-basketball', name: 'Basketball', photo: capBasketball, sport: 'basketball', kind: 'cap' },
+      // Same five leagues, same order, same names as the tees. Every cap in the
+      // shoot wears its league's emblem, so the league IS what distinguishes
+      // them — and the two groups now read as one collection in two materials
+      // rather than as two lists that happen to sit together.
+      { id: 'cap-crick-stryke', name: 'Crick-Stryke', photo: capCricket, sport: 'cricket', kind: 'cap' },
+      { id: 'cap-apex-kick', name: 'Apex-Kick', photo: capFootball, sport: 'football', kind: 'cap' },
+      { id: 'cap-sky-smash', name: 'Sky-Smash', photo: capBadminton, sport: 'badminton', kind: 'cap' },
+      // `league-tee.webp` is the Spin-Ignite cap despite its name: the caps in
+      // it wear the flaming tennis ball and the tee behind is Spin-Ignite's.
+      { id: 'cap-spin-ignite', name: 'Spin-Ignite', photo: leagueTee, sport: 'tennis', kind: 'cap' },
+      { id: 'cap-rim-crush', name: 'Rim-Crush', photo: capBasketball, sport: 'basketball', kind: 'cap' },
     ],
   },
 ]
