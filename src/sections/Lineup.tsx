@@ -7,7 +7,9 @@ import apexKick from '../assets/products/apex-kick.webp'
 import skySmash from '../assets/products/sky-smash.webp'
 import spinIgnite from '../assets/products/spin-ignite.webp'
 import rimCrush from '../assets/products/rim-crush.webp'
-import leagueTee from '../assets/products/league-tee.webp'
+import capBadminton from '../assets/products/cap-badminton.webp'
+import capBasketball from '../assets/products/cap-basketball.webp'
+import capFootball from '../assets/products/cap-football.webp'
 import helmet from '../assets/lineup/helmet.webp'
 import racket from '../assets/lineup/racket.webp'
 import propBall from '../assets/lineup/prop-ball.svg'
@@ -21,12 +23,14 @@ gsap.registerPlugin(ScrollTrigger)
  * The list used to be five tees with nothing saying what they were, which reads
  * as a list of made-up words on a shop page. Naming the category before the
  * products is what turns it into a catalogue — and it is also what makes room
- * for the cap, which the grid above already sells and this list had no way to
- * hold.
+ * for the caps, which the grid above sells as one line and this list had no way
+ * to hold at all.
  *
- * `league-tee.webp` is the cap's shot despite its name: the fifth photograph in
- * the set is the cap's, not a second Spin-Ignite tee. See the note in
- * Products.tsx.
+ * The caps are named by SPORT where the tees are named by league. They are the
+ * league's caps, so naming them Sky-Smash, Rim-Crush and Apex-Kick would have
+ * been just as true — and would have printed those three words twice each in
+ * one list, once under each heading, with no way to tell which was the shirt.
+ * The sport is the thing that actually differs between them.
  */
 const RAW_GROUPS = [
   {
@@ -44,7 +48,9 @@ const RAW_GROUPS = [
     id: 'caps',
     label: 'Caps',
     items: [
-      { id: 'league-cap', name: 'Cap', photo: leagueTee, sport: 'basketball', kind: 'cap' },
+      { id: 'cap-badminton', name: 'Badminton', photo: capBadminton, sport: 'badminton', kind: 'cap' },
+      { id: 'cap-basketball', name: 'Basketball', photo: capBasketball, sport: 'basketball', kind: 'cap' },
+      { id: 'cap-football', name: 'Football', photo: capFootball, sport: 'football', kind: 'cap' },
     ],
   },
 ]
@@ -61,11 +67,19 @@ const GROUPS = RAW_GROUPS.map((g) => ({
 }))
 const COUNT = seq
 
+/** What a sport is played on. Football is not played on a court. */
+const GROUND: Record<string, string> = {
+  cricket: 'ground',
+  football: 'pitch',
+}
+
 /** What the shot actually shows, which is not always a tee. */
-const shotAlt = (it: { name: string; sport: string; kind: string }) =>
-  it.kind === 'cap'
-    ? `The league cap, worn on a ${it.sport} court`
-    : `${it.name} tee, worn on a ${it.sport} court`
+const shotAlt = (it: { name: string; sport: string; kind: string }) => {
+  const on = `${it.sport} ${GROUND[it.sport] ?? 'court'}`
+  return it.kind === 'cap'
+    ? `The league ${it.sport} cap, worn on a ${on}`
+    : `${it.name} tee, worn on a ${on}`
+}
 
 /**
  * The stretch of scroll the items are stepped across.
