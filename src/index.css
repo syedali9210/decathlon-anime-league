@@ -1292,9 +1292,15 @@ body::-webkit-scrollbar {
    drift carried each of them out of the section entirely — the football over
    the ground above it, the tennis ball over the line-up below. Moved in, they
    keep the full differential. */
+/* Lifted off the tee. At 7% the ball's resting span was 0.2-13.8% of the stage
+   against a photograph that starts at 3.4%, so it sat across the top third of
+   the print rather than over the card. At 2% the overlap is the card's top
+   corner and little else, and the rest of the ball is in the section's own top
+   padding — which is 11.4% of the stage, so there is room for it and for the
+   drift that follows. */
 .products__prop[data-prop='football'] {
   left: 8%;
-  top: 7%;
+  top: 2%;
   width: 15%;
 }
 .products__prop[data-prop='cricketball'] {
