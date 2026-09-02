@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { COLLECTION } from './sections/shopLinks'
 
 /**
  * Figma 337-873. The campaign's standing call to action: a pink pill that is
@@ -35,8 +36,7 @@ export function ShopButton() {
     <a
       className="shopbtn"
       data-shown={shown || undefined}
-      // The hero's own banners point here; this is the same errand.
-      href="https://www.decathlon.in/"
+      href={COLLECTION}
       target="_blank"
       rel="noopener noreferrer"
       ref={link}

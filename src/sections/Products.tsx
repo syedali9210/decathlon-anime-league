@@ -150,8 +150,8 @@ export function Products() {
                     chrome are both absolutely placed inside this box, and an
                     anchor around them would have to become the positioning
                     context itself.
-                    Only the tees have pages — see `shopLink`, which is where
-                    that rule lives so a cap can never inherit its sport's. */}
+                    Which product page a card points at lives in `shopLink`,
+                    so a cap can never inherit its sport's tee. */}
                 {shopLink(p) && (
                   <a
                     className="pcard__link"

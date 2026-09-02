@@ -50,6 +50,7 @@ import playerCricket from '../assets/scene/player-cricket.svg?raw'
 import bannerRight from '../assets/scene/banner-right.svg?raw'
 import bannerLeft from '../assets/scene/banner-left.svg?raw'
 import flags from '../assets/scene/flags.svg?raw'
+import { COLLECTION } from '../sections/shopLinks'
 
 /**
  * Words set on a layer's own artwork, in the artwork's own units — Figma
@@ -98,9 +99,9 @@ export type Layer = {
 /**
  * The badge and the two banners used to carry hotspots into decathlon.in. They
  * are gone: the hero is the campaign's own artwork, and three invisible anchors
- * laid over it made the whole first screen behave like a banner ad. The
- * standing brand mark and the Shop pill both go to the same place and both say
- * so, which is where that errand belongs.
+ * laid over it made the whole first screen behave like a banner ad. The badge's
+ * own CTA, the standing brand mark and the Shop pill all say where they go,
+ * which is where that errand belongs.
  */
 export const LAYERS: Layer[] = [
   { id: 'net', svg: net, depth: 0.1 },
@@ -130,7 +131,7 @@ export const LAYERS: Layer[] = [
       // the red flame, and 53.6% cleared it but sat against the caption with all
       // the slack underneath.
       cta: {
-        href: 'https://www.decathlon.in/',
+        href: COLLECTION,
         label: 'Shop the collection',
         at: ['49.9%', '54.15%'],
       },

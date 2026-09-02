@@ -274,7 +274,7 @@ export function Lineup() {
                           aria-hidden="true"
                         />
 
-                        {/* Only the tees have product pages — see `shopLink`.
+                        {/* Not everything has a product page — see `shopLink`.
                             `tabIndex` follows the open item because a closed
                             panel is collapsed to zero height and clipped, not
                             removed: without this, tabbing through the line-up
