@@ -14,7 +14,6 @@ import backRimCrush from "../assets/episodes/back-rim-crush.svg";
 import { animateCard } from "./episodeParts";
 import { namespaceIds } from "../lib/inlineSvg";
 import { scrollToSection } from "../lib/useParallax";
-import { COLLECTION } from "./shopLinks";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -738,51 +737,55 @@ export function Episodes() {
                     <Card ep={ep} />
                   </div>
                 </div>
-                {/* The poster IS the way to the garment. Laid over the card
-                    rather than wrapped around it: `.ecard` carries both the
-                    deal's transform and the flip, and a <button> in that chain
-                    would be a third owner of the same property. Its own name,
-                    because the poster's `aria-label` describes the artwork and
-                    this describes the errand.
+                {/* The whole poster is a hit area for the same errand the
+                    pill below it names. Laid over the card rather than wrapped
+                    around it: `.ecard` carries both the deal's transform and
+                    the flip, and a <button> in that chain would be a third
+                    owner of the same property.
 
-                    No duration: the catalogue is the next section down, which
-                    is what `scrollToSection`'s default is for. The 2.8s this
-                    used to ask for was bought to cross several sections to the
-                    ground, and the reason given for it was that the reader saw
-                    the catalogue go past on the way — so now that the catalogue
-                    is the destination, that length is a crawl over one screen
-                    with nothing left to watch. */}
+                    Out of the tab order and out of the accessibility tree, and
+                    it has no name for the same reason: the pill under the card
+                    is the announced control, and offering the same trip twice
+                    per card — ten stops to five destinations — is a worse read
+                    than one clear one. This is here so that clicking the
+                    artwork does what the artwork looks like it should do. */}
                 <button
                   className="ecard__jump"
                   type="button"
+                  tabIndex={-1}
+                  aria-hidden="true"
                   onClick={() => {
                     const tee = teeTarget(ep.id);
                     if (tee) scrollToSection(tee);
                   }}
-                >
-                  <span className="sr-only">
-                    See the {ep.title} tee in the catalogue
-                  </span>
-                </button>
+                />
               </div>
               {/* Under the card, not on it: the poster is the artwork and this
                   is a control. It waits for `data-landed` — the deck's own
                   "dealt and still" flag — because a row of buttons sitting in
                   their final places while the cards are still flying in reads
                   as a broken layout rather than a deliberate one.
-                  Off the page to Decathlon, where the card above it goes down
-                  the page to the story — the two things a reader can want from
-                  a poster, and each on its own control rather than both on one.
-                  The name is for assistive tech: five links all called
+
+                  A button, not a link off to Decathlon. Exploring an episode
+                  means going to see its garment, and that lives one section
+                  down this page — the store is where the catalogue card sends
+                  you, once you have looked at it. Which also means the reader
+                  is never thrown into a new tab from the middle of a scroll
+                  sequence they are halfway through.
+
+                  The name is for assistive tech: five buttons all called
                   "Explore" are a list of nothing. */}
-              <a
+              <button
                 className="ecard__shop"
-                href={COLLECTION}
-                target="_blank"
-                rel="noopener noreferrer"
+                type="button"
+                onClick={() => {
+                  const tee = teeTarget(ep.id);
+                  if (tee) scrollToSection(tee);
+                }}
               >
-                Explore<span className="sr-only"> {ep.title} at Decathlon</span>
-              </a>
+                Explore
+                <span className="sr-only"> the {ep.title} tee, below</span>
+              </button>
             </li>
           ))}
         </ul>

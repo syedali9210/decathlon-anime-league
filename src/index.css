@@ -1094,6 +1094,9 @@ body::-webkit-scrollbar {
   border: 2px solid #000;
   border-radius: 25px;
   filter: drop-shadow(-2px 2px 0 #000);
+  /* It is a <button> now that it scrolls the page rather than leaving it, and a
+     button does not take the pointer a link does. */
+  cursor: pointer;
 
   /* Held back until the deck has dealt itself out and come to rest. */
   opacity: 0;
