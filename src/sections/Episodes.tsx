@@ -35,18 +35,20 @@ function refreshTriggers() {
 const TITLE = "Welcome to the anime world";
 
 /**
- * Seconds the card's journey to the story takes.
+ * Where a poster leads: its OWN tee, down in the catalogue.
  *
- * Long, and deliberately so. The story sits several sections below the deck,
- * and the point of sending a reader there from a poster is that they see what
- * is between the two on the way — the catalogue, the balls crossing it. At the
- * cue's own 1.1s that stretch is a blur and the arrival reads as a page change;
- * at this length it reads as travelling.
+ * The grid has carried `tee-<id>` on every card for exactly this, and the five
+ * episode ids are the same five product ids. Every card used to land on the
+ * ground section instead — one destination for all five, which made the poster
+ * a scroll button rather than a way to the thing it is a poster for.
+ *
+ * The catalogue falls back to itself if an id ever stops matching, because a
+ * control that does nothing at all when clicked is worse than one that lands a
+ * little wide.
  */
-const JOURNEY = 2.8;
-
-/** The story the cards lead to. */
-const STORY = ".ground";
+const teeTarget = (id: string) =>
+  document.getElementById(`tee-${id}`) ??
+  document.querySelector<HTMLElement>(".products");
 
 /** The eight-pointer from `card-chrome.svg`, flanking the divider as on the board. */
 /** The divider label cycles through these, forever. */
@@ -736,22 +738,30 @@ export function Episodes() {
                     <Card ep={ep} />
                   </div>
                 </div>
-                {/* The poster IS the way into the story. Laid over the card
+                {/* The poster IS the way to the garment. Laid over the card
                     rather than wrapped around it: `.ecard` carries both the
                     deal's transform and the flip, and a <button> in that chain
                     would be a third owner of the same property. Its own name,
                     because the poster's `aria-label` describes the artwork and
-                    this describes the errand. */}
+                    this describes the errand.
+
+                    No duration: the catalogue is the next section down, which
+                    is what `scrollToSection`'s default is for. The 2.8s this
+                    used to ask for was bought to cross several sections to the
+                    ground, and the reason given for it was that the reader saw
+                    the catalogue go past on the way — so now that the catalogue
+                    is the destination, that length is a crawl over one screen
+                    with nothing left to watch. */}
                 <button
                   className="ecard__jump"
                   type="button"
                   onClick={() => {
-                    const story = document.querySelector<HTMLElement>(STORY);
-                    if (story) scrollToSection(story, JOURNEY);
+                    const tee = teeTarget(ep.id);
+                    if (tee) scrollToSection(tee);
                   }}
                 >
                   <span className="sr-only">
-                    Read the story behind {ep.title}
+                    See the {ep.title} tee in the catalogue
                   </span>
                 </button>
               </div>
