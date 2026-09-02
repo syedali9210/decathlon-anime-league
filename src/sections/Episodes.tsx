@@ -14,6 +14,7 @@ import backRimCrush from "../assets/episodes/back-rim-crush.svg";
 import { animateCard } from "./episodeParts";
 import { namespaceIds } from "../lib/inlineSvg";
 import { scrollToSection } from "../lib/useParallax";
+import { COLLECTION } from "./shopLinks";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -32,9 +33,6 @@ function refreshTriggers() {
 }
 
 const TITLE = "Welcome to the anime world";
-
-/** Where every EXPLORE pill goes. The hero's banners and the Shop pill agree. */
-const SHOP_URL = "https://www.decathlon.in/";
 
 /**
  * Seconds the card's journey to the story takes.
@@ -239,19 +237,29 @@ function useHeaderReveal(
       // under half a second and the line reads as one word arriving rather than
       // as letters queueing. The copy under it follows while the last few are
       // still landing, which is what keeps the whole header one event.
+      //
+      // `expo.out` and these durations are not chosen here, they are the
+      // stylesheet's: every other section on the page arrives on
+      // `cubic-bezier(0.16, 1, 0.3, 1)` over 500-720ms — see the `[data-shown]`
+      // rules — and that curve IS expo-out. This was the one entrance on the
+      // page running a different, weaker one, which is why the headline settled
+      // more slowly than the sections either side of it. Strong ease-out is
+      // also the right shape for the job: almost all of the distance covered
+      // immediately, then a long settle, so the type reads as arriving rather
+      // than as travelling.
       tl.from(chars, {
         autoAlpha: 0,
         y: 26,
-        duration: 0.5,
-        ease: "power2.out",
+        duration: 0.62,
+        ease: "expo.out",
         stagger: 0.018,
       }).from(
         rest,
         {
           autoAlpha: 0,
           y: 18,
-          duration: 0.45,
-          ease: "power2.out",
+          duration: 0.56,
+          ease: "expo.out",
           stagger: 0.08,
         },
         0.3,
@@ -341,37 +349,61 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
           return r.left + r.width / 2 - (b.left + b.width / 2);
         };
         const runway = el.closest<HTMLElement>(".episodes-runway");
+        const cards = [...el.querySelectorAll<HTMLElement>(".ecard")];
 
-        // The row waits out of sight until the deal begins. This used to be the
-        // intro relay's job — it hid the row on its first frame and put it back
-        // on its last — but the relay is gone, and the reason for it never was
-        // the relay: a staggered tween has not started its later targets at
-        // progress 0, so four of the five cards carry no transform and sit in
-        // plain sight, in a row, exactly where the layout puts them. Nothing
-        // done to the cards can fix that; the container has to go. So the deal
-        // now owns both ends of it, which is where it always belonged.
+        // Where card `i` sits in the pile, in one place, because two things
+        // need the same answer: the tween that deals it out, and the resting
+        // style below that holds it there until the tween takes over.
+        //
+        // Measured off the seat, never the card: the card already carries the
+        // offset this returns, so measuring it feeds back on itself and the
+        // pile collapses on the next refresh. The <li> never moves.
+        const pileOf = (card: Element, i: number) => ({
+          x: centreOffset(card) + seat(card).width * (PILE[i]?.dx ?? 0),
+          // Below the row and off the foot of the pinned screen, so the deck
+          // rises into view rather than being parked in the layout.
+          y: seat(card).height * (0.95 + (PILE[i]?.dy ?? 0)),
+          r: PILE[i]?.r ?? 0,
+        });
+
+        /**
+         * The pile, written as each card's own resting transform — see `.ecard`
+         * in the stylesheet, which hands `--pile` to `transform` whenever GSAP
+         * has not written one of its own.
+         *
+         * This is what stops the deck reading as already dealt. A staggered
+         * tween has not started its later targets at progress 0, and
+         * `invalidateOnRefresh` clears the start values it rendered when it was
+         * built — so four of the five cards carried NO transform and sat in the
+         * row, face down, where the layout puts them, until their turn came and
+         * they jumped down into a pile the reader had never seen. Nothing inside
+         * the tween can fix that: the tween is exactly what is not running for
+         * those cards.
+         *
+         * Safe to re-run at any moment, which is why the refresh below simply
+         * calls it: it writes a custom property, never `transform`, so a card
+         * the deal is currently moving does not notice.
+         */
+        const park = () =>
+          cards.forEach((c, i) => {
+            const p = pileOf(c, i);
+            c.style.setProperty(
+              "--pile",
+              `translate(${p.x}px, ${p.y}px) rotate(${p.r}deg) scale(0.82)`,
+            );
+          });
+        park();
+
+        // The row still waits out of sight until the deal begins, but only so
+        // the pile is not sat under the header while the reader is reading it.
         gsap.set(row, { autoAlpha: 0 });
 
         gsap.fromTo(
-          ".ecard",
+          cards,
           {
-            // Measured off the seat, never the card: the card already carries
-            // the offset these return, so measuring it feeds back on itself and
-            // the pile collapses on the next refresh. The <li> never moves.
-            x: (i: number, t: Element) =>
-              centreOffset(t) + seat(t).width * (PILE[i]?.dx ?? 0),
-            // Below the row and off the foot of the pinned screen, so the deck
-            // rises into view rather than being parked in the layout.
-            //
-            // Only card 0 is ever seen in this state, and only for an instant:
-            // a staggered tween has not started its later targets at progress
-            // 0, so four of the five carry no transform at all until their turn
-            // comes. That is why the ROW is hidden until the deal begins rather
-            // than this being asked to park the deck out of sight — it can only
-            // ever move the one card GSAP has actually rendered.
-            y: (i: number, t: Element) =>
-              seat(t).height * (0.95 + (PILE[i]?.dy ?? 0)),
-            rotate: (i: number) => PILE[i]?.r ?? 0,
+            x: (i: number, t: Element) => pileOf(t, i).x,
+            y: (i: number, t: Element) => pileOf(t, i).y,
+            rotate: (i: number, t: Element) => pileOf(t, i).r,
             rotateY: 0,
             scale: 0.82,
             transformPerspective: 1400,
@@ -422,18 +454,33 @@ function useCardDeal(section: React.RefObject<HTMLElement | null>) {
               // The other end of the hide above: the row comes back the moment
               // the deal starts, which is the first frame a card is anywhere
               // other than where the layout puts it.
-              onEnter: () => gsap.set(row, { autoAlpha: 1 }),
+              // Faded, not switched. The pile's top edge sits inside the
+              // viewport at progress 0, so a hard `set` here was a strip of
+              // card tops appearing out of nothing at the foot of the screen —
+              // small, but the exact kind of cut the deal exists to avoid.
+              onEnter: () =>
+                gsap.to(row, { autoAlpha: 1, duration: 0.3, ease: "power2.out" }),
               onLeave: () => el.toggleAttribute("data-landed", true),
               onEnterBack: () => el.toggleAttribute("data-landed", false),
-              // `onLeave` only fires on an actual crossing, so a reload with
-              // the browser restoring a scroll position past the deal would
-              // leave the deck landed but unflagged — and the shop links,
-              // which wait on that flag, invisible for good.
-              onRefresh: (self) =>
-                el.toggleAttribute("data-landed", self.progress >= 1),
+              // `onEnter` and `onLeave` only fire on an actual crossing, so a
+              // reload with the browser restoring a scroll position past the
+              // deal would leave the deck landed but unflagged — the shop
+              // links, which wait on that flag, invisible for good — and the
+              // row hidden, because nothing had entered it. Progress is the
+              // truth in both cases, and it is known on every refresh.
+              //
+              // `park` rides along because a refresh is exactly when the row's
+              // centre and the card's size may have changed underneath it.
+              onRefresh: (self) => {
+                park();
+                gsap.set(row, { autoAlpha: self.progress > 0 ? 1 : 0 });
+                el.toggleAttribute("data-landed", self.progress >= 1);
+              },
             },
           },
         );
+
+        return () => cards.forEach((c) => c.style.removeProperty("--pile"));
       },
       el,
     );
@@ -720,7 +767,7 @@ export function Episodes() {
                   "Explore" are a list of nothing. */}
               <a
                 className="ecard__shop"
-                href={SHOP_URL}
+                href={COLLECTION}
                 target="_blank"
                 rel="noopener noreferrer"
               >

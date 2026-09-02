@@ -1012,6 +1012,19 @@ body::-webkit-scrollbar {
 
 .ecard {
   position: relative;
+  /* The card's resting place is the PILE, not the seat the layout gives it.
+     `--pile` is written per card by `useCardDeal` and re-written on every
+     refresh; GSAP's own inline transform beats this rule for as long as the
+     deal is actually moving the card.
+
+     This is here rather than in the tween because the tween is exactly what is
+     not running for a card whose turn has not come: a staggered tween has not
+     started its later targets at progress 0, and `invalidateOnRefresh` clears
+     the start values it rendered when it was built, so four of the five cards
+     carried no transform at all and sat in plain sight, in a row, face down,
+     where the layout puts them. A resting state cannot live in the thing that
+     is resting. */
+  transform: var(--pile, none);
   transform-style: preserve-3d;
   will-change: transform;
 }
