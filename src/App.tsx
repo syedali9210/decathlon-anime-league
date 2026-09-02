@@ -11,6 +11,7 @@ import { BrandMark } from './BrandMark'
 import { useSmoothScroll } from './lib/useParallax'
 import { useIdleOffscreen } from './lib/useIdleOffscreen'
 import { useReveal } from './lib/useReveal'
+import { Analytics } from '@vercel/analytics/react'
 
 export default function App() {
   useSmoothScroll()
@@ -35,6 +36,8 @@ export default function App() {
       <ScrollCue />
       <ShopButton />
       <Cursor />
+      {/* Renders nothing; only reports page views once deployed. */}
+      <Analytics />
     </>
   )
 }

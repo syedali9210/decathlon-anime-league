@@ -11,6 +11,7 @@
     "assets:opt": "svgo -q -f src/assets/scene -o src/assets/scene && svgo -q -f src/assets/frame -o src/assets/frame && svgo -q -f src/assets/episodes -o src/assets/episodes && svgo -q -f src/assets/products -o src/assets/products && svgo -q -f src/assets/lineup -o src/assets/lineup && svgo -q -r -f src/assets/ground -o src/assets/ground && svgo -q -f src/assets/footer -o src/assets/footer"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "gsap": "^3.13.0",
     "lenis": "^1.3.11",
     "react": "^19.2.0",
