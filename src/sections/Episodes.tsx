@@ -528,44 +528,77 @@ function useLabelCycle(host: React.RefObject<HTMLElement | null>) {
       return;
     }
 
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ repeat: -1 });
-      phrases.forEach((p) => {
-        const chars = p.querySelectorAll(".episodes__char");
-        tl.set(p, { autoAlpha: 1 })
-          // This one IS played rather than scrubbed, so it keeps its
-          // overshoot. The stretch comes down from 1.5: a glyph at half again
-          // its height is re-rasterised every frame, and twenty of them at once
-          // is what made the label judder where the rest of the cycle did not.
-          .from(chars, {
-            yPercent: 120,
-            rotate: -8,
-            scaleY: 1.2,
-            opacity: 0,
-            transformOrigin: "50% 100%",
-            duration: 0.45,
-            ease: "back.out(2.2)",
-            stagger: 0.028,
-            force3D: true,
-          })
-          // A gap on the position parameter rather than a tween on {}: an empty
-          // target inherits the timeline defaults and GSAP rightly rejects it.
-          .to(
-            chars,
-            {
-              yPercent: -110,
-              opacity: 0,
-              duration: 0.3,
-              ease: "power2.in",
-              stagger: 0.02,
-            },
-            "+=2.4",
-          )
-          .set(p, { autoAlpha: 0 });
-      });
-    }, el);
+    // `gsap.matchMedia`, not a check at mount: the decision has to be revisited
+    // when the viewport crosses the breakpoint, for the same reason the deal
+    // uses it — a page loaded narrow and then widened would otherwise keep the
+    // phone's cycle for good.
+    const mm = gsap.matchMedia();
+    mm.add(
+      { phone: "(max-width: 640px)", roomy: "(min-width: 641px)" },
+      (ctx) => {
+        const phone = ctx.conditions!.phone;
 
-    return () => ctx.revert();
+        // The two properties a phone does not get.
+        //
+        // A rotation and a vertical stretch both change a glyph's rendered
+        // geometry, so the text is re-rasterised on every frame they move — and
+        // `back.out` overshoots, so the stretch runs past its target and comes
+        // back, which is a glyph going soft and snapping sharp twice per
+        // letter. Eighteen of them at once, on a loop that never ends, at a
+        // device pixel ratio of 2 or 3. That reads as jitter, and no easing
+        // change can fix it because the cost is in the rasteriser, not the
+        // curve.
+        //
+        // The stretch was already found once and brought down from 1.5 to 1.2,
+        // which halved the problem rather than removing it. Here it is removed:
+        // what is left is `yPercent` and `opacity`, which the compositor moves
+        // without touching the glyph, and the overshoot is kept because it is
+        // free on a property that does not re-rasterise. The letters still rise
+        // and still overshoot; they simply stay sharp on the way.
+        //
+        // Kept at full strength above the breakpoint, where there is the GPU
+        // headroom for it and the label is a third of the size of the screen it
+        // is drawn on.
+        const shape = phone
+          ? {}
+          : { rotate: -8, scaleY: 1.2, transformOrigin: "50% 100%" };
+
+        const tl = gsap.timeline({ repeat: -1 });
+        phrases.forEach((p) => {
+          const chars = p.querySelectorAll(".episodes__char");
+          tl.set(p, { autoAlpha: 1 })
+            // This one IS played rather than scrubbed, so it keeps its
+            // overshoot.
+            .from(chars, {
+              yPercent: 120,
+              opacity: 0,
+              ...shape,
+              duration: 0.45,
+              ease: "back.out(2.2)",
+              stagger: 0.028,
+              force3D: true,
+            })
+            // A gap on the position parameter rather than a tween on {}: an
+            // empty target inherits the timeline defaults and GSAP rightly
+            // rejects it.
+            .to(
+              chars,
+              {
+                yPercent: -110,
+                opacity: 0,
+                duration: 0.3,
+                ease: "power2.in",
+                stagger: 0.02,
+              },
+              "+=2.4",
+            )
+            .set(p, { autoAlpha: 0 });
+        });
+      },
+      el,
+    );
+
+    return () => mm.revert();
   }, [host]);
 }
 
