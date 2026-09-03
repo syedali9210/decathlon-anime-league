@@ -285,40 +285,32 @@ body::-webkit-scrollbar {
   left: 50%;
   width: max(100cqw, calc(100cqh * 1495 / 903));
   height: max(100cqh, calc(100cqw * 903 / 1495));
-  /* Anchored to the baseline, not the centre: the ribbon and foliage along the
-     bottom edge are composition, the sky above is not, so the crop is taken off
-     the top. The 0.6% bleed is headroom for the pointer sweep nudging the court
-     upward.
-     Off the top ONLY UP TO A POINT, though. On a wide, short window the cover
-     crops more than the sky has to give and the league medallion — the banner's
-     own title — goes over the frame's top edge: 106px of the flame at 1920x900,
-     258 at 2560x1080. So the art is pushed back down.
+  /* Anchored to the baseline, not the centre: the ribbon, the foliage and the
+     Decathlon plate along the bottom edge are composition, the sky above is
+     not, so the crop is taken off the top. The 0.6% bleed is headroom for the
+     pointer sweep nudging the court upward.
 
-     By exactly as much as the medallion needs, and no more. This used to hand
-     the bottom a flat 62% of the overflow, which is a share of the wrong thing:
-     it pays out whenever the art is taller than the frame, including when the
-     medallion is nowhere near the edge. On a 1080-tall window it spent 97px
-     buying headroom the badge already had 70px of — and 97px is the whole
-     Decathlon plate at the foot, so the reader got an 8px sliver of a 70px
-     mark. The old note here said the foot had room to spare, but it measured
-     the BADGE layer's foot. The plate and the checkered flags are the `flags`
-     layer, which sits lower, and they are what the drop was really spending.
+     Off the top, and ONLY off the top. This used to push the art back DOWN by
+     up to 300px on a wide, short window, to keep the league medallion's flame
+     from going over the frame's top edge. What paid for that was the Decathlon
+     plate, which is the lowest thing in the artwork — its foot sits about 0.67%
+     of the artwork's height above the artwork's own foot, so it has almost
+     nothing to give and every pixel of drop came straight out of it. Measured:
+     on a 1470x760 window the drop was 45px and cut 39px off an 81px plate, half
+     the mark; at 2560x1080 it was 283px and the plate was gone from the frame
+     altogether, while the flame it was protecting sat 27px clear.
 
-     `--art-crown` is where the flame's top lands with the art left standing on
-     its baseline, measured down from the frame's top; negative means it is cut.
-     0.814 is the share of the artboard below that crown — the flame's top is
-     18.56% down the 903-tall box, measured, not chosen. The drop is then just
-     the shortfall plus 28px, so the flame clears the edge rather than kissing
-     it, and nothing at all when there is no shortfall. Still capped: past 300px
-     the ribbon starts to go, and the ribbon is what the baseline anchor exists
-     to protect. */
-  --art-cover: max(100cqh, calc(100cqw * 903 / 1495));
-  --art-crown: calc(
-    100cqh + 0.006 * var(--art-cover) - 0.814 * var(--overscan) *
-      var(--art-cover)
-  );
-  --art-drop: clamp(0px, calc(28px - var(--art-crown)), 300px);
-  transform: translate(-50%, calc(0.6% + var(--art-drop))) scale(var(--overscan));
+     So the drop is gone and the flame takes the crop, which is what a
+     baseline-anchored cover is for in the first place. The flame is a
+     decorative outline whose tip reaching the frame's edge reads as a crop; the
+     medallion inside it, its caption and its CTA are nowhere near the edge at
+     any shape tested. A brand mark cut in half does not read as a crop.
+
+     `.scrollcue` was already written against this: it places itself off "the
+     plate's top ... 9.53% of the artwork's height above the artwork's foot",
+     with the art "stood on the frame's floor". The drop was quietly making that
+     false, and the cue drifted off the plate by exactly the same amount. */
+  transform: translate(-50%, 0.6%) scale(var(--overscan));
   /* So the words printed on the medallion can be sized against the ARTWORK.
      `.hero__stage` is a container too, but it is the window's box — the art is
      bigger than it by the cover and the overscan, and type keyed to the window
@@ -3531,8 +3523,8 @@ html[data-custom-cursor] * {
      margin keeps the cue off it rather than against it.
 
      `max()` is the same cover the illustration sizes itself by (see
-     `--art-cover`), rewritten in viewport units because this is fixed to the
-     window and cannot read the frame's container. The two agree: `.hero__stage`
+     `.stage__art`'s width/height), rewritten in viewport units because this is
+     fixed to the window and cannot read the frame's container. The two agree: `.hero__stage`
      is inset by `--frame-pad` on a full-width `100svh` hero.
 
      The phone lands high on this too, which is what it wanted anyway: the Shop
