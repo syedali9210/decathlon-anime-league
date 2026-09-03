@@ -2267,37 +2267,67 @@ body::-webkit-scrollbar {
    ~140 stacked <div>s per edge) renders identically and costs 500+ nodes. */
 .frame__edge {
   position: absolute;
-  background:
-    linear-gradient(
-      var(--edge-dir),
-      var(--c-gold) 0 var(--band-outer),
-      transparent var(--band-outer)
-        calc(var(--band-outer) + var(--band-check)),
-      var(--c-gold) calc(var(--band-outer) + var(--band-check)) 100%
-    ),
-    repeating-linear-gradient(
-      var(--check-dir),
-      var(--c-magenta) 0 var(--band-dash),
-      var(--c-blue) var(--band-dash) calc(var(--band-dash) * 2)
-    );
+  /* The belt below overhangs this box by a tile-pair at each end. */
+  overflow: clip;
+}
+
+/* The belt itself, and the only part of the frame that moves.
+   It used to be a second background layer on the box above, run by animating
+   `background-position` — which the browser cannot composite: a gradient moved
+   that way is REPAINTED every frame, and these four strips are the full width
+   and height of the window, always on screen while the hero is, on top of the
+   nineteen parallax layers and the masks below. It was the only continuous
+   paint on the page's heaviest fold.
+   On its own box it is a `transform` instead, which the compositor moves as a
+   texture without repainting anything. The tile is unchanged and so is the
+   loop: `--frame-pitch` is exactly one magenta+blue pair, so the box is grown
+   by one pair at each end — which leaves the gradient's own phase untouched,
+   because a repeating gradient shifted by a whole tile is the same gradient —
+   and travelling one pair puts an identical tile where the last one was. */
+.frame__edge::before {
+  content: '';
+  position: absolute;
+  inset: var(--belt-inset);
+  background: repeating-linear-gradient(
+    var(--check-dir),
+    var(--c-magenta) 0 var(--band-dash),
+    var(--c-blue) var(--band-dash) calc(var(--band-dash) * 2)
+  );
   animation: var(--frame-run) var(--frame-speed) linear infinite;
+}
+
+/* The gold rails, over the belt, with the transparent window it shows through.
+   Static, so it is painted once and never again. */
+.frame__edge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    var(--edge-dir),
+    var(--c-gold) 0 var(--band-outer),
+    transparent var(--band-outer)
+      calc(var(--band-outer) + var(--band-check)),
+    var(--c-gold) calc(var(--band-outer) + var(--band-check)) 100%
+  );
+}
+
+/* Opposite edges run opposite ways — on the belt now, not on its box. */
+.frame__edge--bottom::before,
+.frame__edge--left::before {
+  animation-direction: reverse;
 }
 
 /* Opposite edges run opposite ways, so the belt circulates clockwise rather
    than the top and bottom sliding the same way. */
 @keyframes frame-run-x {
   to {
-    background-position:
-      0 0,
-      var(--frame-pitch) 0;
+    transform: translate3d(var(--frame-pitch), 0, 0);
   }
 }
 
 @keyframes frame-run-y {
   to {
-    background-position:
-      0 0,
-      0 var(--frame-pitch);
+    transform: translate3d(0, var(--frame-pitch), 0);
   }
 }
 
@@ -2340,6 +2370,7 @@ body::-webkit-scrollbar {
   /* 57 down from the frame's top; the run's own box starts there. */
   --disc-y: calc(var(--band) * 57 / 24);
   --frame-run: frame-run-x;
+  --belt-inset: 0 calc(var(--frame-pitch) * -1);
   inset: 0 var(--corner-lead) auto var(--corner-lead);
   height: var(--band);
 }
@@ -2349,7 +2380,7 @@ body::-webkit-scrollbar {
   /* 57 up from the frame's foot, and this box is the last 24 of it. */
   --disc-y: calc(var(--band) * -33 / 24);
   --frame-run: frame-run-x;
-  animation-direction: reverse;
+  --belt-inset: 0 calc(var(--frame-pitch) * -1);
   inset: auto var(--corner-lead) 0 var(--corner-lead);
   height: var(--band);
 }
@@ -2357,7 +2388,7 @@ body::-webkit-scrollbar {
   --edge-dir: to right;
   --check-dir: 0deg;
   --frame-run: frame-run-y;
-  animation-direction: reverse;
+  --belt-inset: calc(var(--frame-pitch) * -1) 0;
   inset: var(--corner-h) auto var(--corner-h) 0;
   width: var(--band);
 }
@@ -2365,6 +2396,7 @@ body::-webkit-scrollbar {
   --edge-dir: to left;
   --check-dir: 0deg;
   --frame-run: frame-run-y;
+  --belt-inset: calc(var(--frame-pitch) * -1) 0;
   inset: var(--corner-h) 0 var(--corner-h) auto;
   width: var(--band);
 }
@@ -2619,8 +2651,14 @@ html[data-custom-cursor] * {
    layer floats, the deck's bob and the props' all run on infinite CSS
    animations, and left alone they keep the compositor busy for sections nobody
    is looking at. An observer marks what is off-screen; this stops it. */
+/* The pseudo-elements are named because `*` does not select them, and the
+   frame's belt is one — without these three lines it would be the one thing
+   that kept running for a section nobody is looking at. */
 [data-idle],
-[data-idle] * {
+[data-idle] *,
+[data-idle]::before,
+[data-idle] *::before,
+[data-idle] *::after {
   animation-play-state: paused !important;
 }
 
@@ -2630,7 +2668,7 @@ html[data-custom-cursor] * {
   .stage__art,
   .layer,
   .layer > svg,
-  .frame__edge,
+  .frame__edge::before,
   .frame__curve-dash,
   .frame__ring-dash {
     animation: none;
