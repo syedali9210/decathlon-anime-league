@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Decathlon">
+  <!-- The Decathlon mark, lifted from the lockup the brand plate and the footer
+       already carry (src/assets/footer/lockup.svg, the path drawn left of the
+       wordmark). The word itself is not here: at 16px in a tab strip six
+       letters are a grey smear, and the mark alone is what a favicon is for.
+
+       Black on cream, which is how this site sets the mark everywhere else —
+       see .brandmark, a black lockup on #f7f1e3. It also reads on both a light
+       and a dark tab strip, which a transparent ground would not.
+
+       The mark measures 112.72 x 96 in the lockup's own units. Scaled by
+       0.8517 it is 96 wide, and the two offsets below centre that in the 128
+       square: (128 - 96) / 2 across, (128 - 81.76) / 2 down. -->
+  <rect width="128" height="128" fill="#f7f1e3"/>
+  <g transform="translate(16 23.12) scale(0.8517)">
+    <path fill="#000" d="M83.42.03C46.24.03 0 38.84 0 71.02 0 87.64 12.65 96 29.36 96c12.25 0 27.1-4.52 41.41-13.24V18.57c-3.8 6.58-21.76 33.17-36.16 47.34-7.34 7.23-13.18 10.36-18.18 10.36-5.65 0-8.3-3.84-8.3-9.6 0-25.97 43.39-59.81 72.13-59.81 11.83 0 19.45 5.3 19.45 15.58 0 9.43-6.35 21.28-17.2 32.2v19.88c18.9-15.07 30.21-34.27 30.21-49.8S100.16 0 83.45 0z"/>
+  </g>
+</svg>
