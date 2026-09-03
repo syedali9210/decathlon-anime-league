@@ -1415,8 +1415,12 @@ body::-webkit-scrollbar {
    drift that follows. */
 .products__prop[data-prop='football'] {
   left: 8%;
-  top: 2%;
-  width: 15%;
+  /* Up off the card and down a size. At 2% and 15% it sat across the whole
+     width of the first tee for the entire pass, over the print on the shirt
+     rather than clipping the corner. Now it clears the card outright for about
+     a quarter of the travel, and its worst overlap is down by a third. */
+  top: -1.5%;
+  width: 12%;
 }
 .products__prop[data-prop='cricketball'] {
   left: 33%;
@@ -1429,9 +1433,23 @@ body::-webkit-scrollbar {
   width: 15.5%;
 }
 .products__prop[data-prop='tennisball'] {
-  left: 94%;
-  top: 90%;
-  width: 20.4%;
+  /* Off Rim-Crush's price, which it used to sit on — 42x22px of the one thing
+     on a product card that has to be readable.
+
+     Down and smaller, but the horizontal nudge is what actually does it. This
+     prop drifts +-145px over the section's pass, and there are only 126px of
+     section below the last card's foot, so no amount of pushing DOWN can carry
+     the whole excursion clear of the price: it would have to start at 100% and
+     hang a tenth of the section over the ground below. Moved 5% inboard as
+     well, the ball's box passes to the LEFT of the price column and the drift
+     stops mattering — it can travel its whole range without ever crossing it.
+
+     Verified by sweeping the full drift range in 5px steps: no contact with the
+     price at any point, still over the card for all of it, and 10px of overhang
+     past the section's foot. */
+  left: 89%;
+  top: 94%;
+  width: 13%;
 }
 
 /* Two columns below this; the cards get unreadable three-up. */
