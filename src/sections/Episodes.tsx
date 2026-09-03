@@ -14,6 +14,7 @@ import backRimCrush from "../assets/episodes/back-rim-crush.svg";
 import { animateCard } from "./episodeParts";
 import { namespaceIds } from "../lib/inlineSvg";
 import { scrollToSection } from "../lib/useParallax";
+import { shopLink } from "./shopLinks";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -770,28 +771,30 @@ export function Episodes() {
                     <Card ep={ep} />
                   </div>
                 </div>
-                {/* The whole poster is a hit area for the same errand the
-                    pill below it names. Laid over the card rather than wrapped
-                    around it: `.ecard` carries both the deal's transform and
-                    the flip, and a <button> in that chain would be a third
-                    owner of the same property.
+                {/* The poster goes DOWN the page to the garment in the
+                    catalogue; the pill below it goes OFF the page to the
+                    garment in the store. Two things a reader can want from a
+                    poster, each on its own control — which is also why this one
+                    is named and focusable again: it stopped being a second way
+                    to do what the pill does.
 
-                    Out of the tab order and out of the accessibility tree, and
-                    it has no name for the same reason: the pill under the card
-                    is the announced control, and offering the same trip twice
-                    per card — ten stops to five destinations — is a worse read
-                    than one clear one. This is here so that clicking the
-                    artwork does what the artwork looks like it should do. */}
+                    Laid over the card rather than wrapped around it: `.ecard`
+                    carries both the deal's transform and the flip, and a
+                    <button> in that chain would be a third owner of the same
+                    property. Its own name, because the poster's `aria-label`
+                    describes the artwork and this describes the errand. */}
                 <button
                   className="ecard__jump"
                   type="button"
-                  tabIndex={-1}
-                  aria-hidden="true"
                   onClick={() => {
                     const tee = teeTarget(ep.id);
                     if (tee) scrollToSection(tee);
                   }}
-                />
+                >
+                  <span className="sr-only">
+                    See the {ep.title} tee in the catalogue
+                  </span>
+                </button>
               </div>
               {/* Under the card, not on it: the poster is the artwork and this
                   is a control. It waits for `data-landed` — the deck's own
@@ -799,26 +802,23 @@ export function Episodes() {
                   their final places while the cards are still flying in reads
                   as a broken layout rather than a deliberate one.
 
-                  A button, not a link off to Decathlon. Exploring an episode
-                  means going to see its garment, and that lives one section
-                  down this page — the store is where the catalogue card sends
-                  you, once you have looked at it. Which also means the reader
-                  is never thrown into a new tab from the middle of a scroll
-                  sequence they are halfway through.
+                  Straight to the garment's own page on decathlon.in, which is
+                  the episode's tee — the deck and the catalogue call the same
+                  five sports by the same five names, so `shopLink` answers for
+                  a poster exactly as it does for a product card, tracker and
+                  all. Not the collection: that is the standing Shop pill's
+                  errand, and it means the whole range rather than this one.
 
-                  The name is for assistive tech: five buttons all called
+                  The name is for assistive tech: five links all called
                   "Explore" are a list of nothing. */}
-              <button
+              <a
                 className="ecard__shop"
-                type="button"
-                onClick={() => {
-                  const tee = teeTarget(ep.id);
-                  if (tee) scrollToSection(tee);
-                }}
+                href={shopLink({ sport: ep.sport, kind: "tee" })}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                Explore
-                <span className="sr-only"> the {ep.title} tee, below</span>
-              </button>
+                Explore<span className="sr-only"> {ep.title} at Decathlon</span>
+              </a>
             </li>
           ))}
         </ul>
