@@ -30,8 +30,8 @@ import { shopLink } from './shopLinks'
  * tee: both people in it are wearing the cap, the man is adjusting his into
  * the camera, and the tee behind is the one card four already sells.
  */
-const TEE = 899
-const CAP = 799
+const TEE = 799
+const CAP = 699
 
 const PRODUCTS = [
   { id: 'crick-stryke', name: 'Crick-Stryke', photo: crickStryke, small: crickStrykeSm, width: 364, sport: 'cricket', kind: 'tee', price: TEE },
