@@ -1282,36 +1282,70 @@ body::-webkit-scrollbar {
   right: 3.29%;
   top: 92.4%;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  gap: 0.1em;
   color: #fff;
-  font-family: 'Roboto Flex', system-ui, sans-serif;
-  /* 4cqi is 17px on the board's own 425 card, and every smaller card is a true
-     scale of it. The floor is legibility; below the card size where the floor
-     stops fitting the band, the container query below drops it out. */
-  font-size: clamp(9px, 4cqi, 17px);
-  line-height: 1.2;
+  /* Barlow Condensed, which is the face the rest of the campaign is set in —
+     the episode headline, the footer's credit, the shop pill. The catalogue was
+     the one place still speaking in Roboto Flex.
+     Condensed type also buys the hierarchy its room: it sets appreciably
+     narrower than Roboto Flex at the same size, so the name can be UPPERCASE
+     and a size up from where it was and still leave the price its end of the
+     line. 4.7cqi is 20px on the board's own 425 card, and every smaller card is
+     a true scale of it; the floor is legibility. */
+  font-family: 'Barlow Condensed', 'Roboto Flex', system-ui, sans-serif;
+  font-size: clamp(10px, 4.7cqi, 20px);
+  line-height: 1.1;
 }
 
+/* The kicker. Small, tracked and dimmed, because it is the same four words on
+   all six cards — it should be legible when looked for and silent otherwise.
+   Uppercase at this size is what lets the tracking do the work: it reads as a
+   label rather than as a shrunken sentence. */
+.pcard__collection {
+  font-weight: 500;
+  font-size: 0.66em;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.58);
+}
+
+/* The line that identifies the card: the garment at one end, its price at the
+   other, sharing a baseline. */
 .pcard__id {
   display: flex;
-  flex-direction: column;
-  gap: 0.42em;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7em;
   min-width: 0;
 }
 
+/* The loudest thing in the band. */
 .pcard__name {
-  font-weight: 600;
-  letter-spacing: 0.005em;
+  min-width: 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  /* Trimmed rather than allowed to shove the price off the card, if a longer
+     name is ever added to the catalogue. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* The one number on the card, and the reason the card is here. Gold and
-   heavier than the name — as white text at the same weight it read as the
-   name's second line rather than as a price. */
+/* The one number on the card, and the reason the card is here. It no longer
+   needs to be a size up to be seen: on a shared line with the name, gold and a
+   weight above it is what separates them, where in a stacked column it was
+   size that had to do it.
+
+   Roboto Flex is load-bearing in the stack above and must not be tidied out of
+   it: Barlow Condensed has no rupee sign. Measured at 100px, U+20B9 renders
+   48.64 wide on the real stack and 48.64 in Roboto Flex alone, against 50 for a
+   font that is not there at all — so the mark is falling through to the site's
+   other face rather than to whatever the system would have picked. With Roboto
+   Flex gone every price on the page would set its currency in a system serif. */
 .pcard__price {
-  font-weight: 700;
-  font-size: 1.06em;
+  font-weight: 800;
   letter-spacing: 0.01em;
   color: var(--c-gold);
   white-space: nowrap;
@@ -1486,29 +1520,19 @@ body::-webkit-scrollbar {
   .pcard__meta {
     top: auto;
     bottom: 4%;
-    align-items: baseline;
-    /* 6.4cqi is 11px on a 172px phone card. The floor is legibility. */
-    font-size: clamp(9px, 6.4cqi, 12px);
+    /* 7.2cqi is 12px on a 172px phone card — a touch up on the 6.4 this asked
+       for in Roboto Flex, because the condensed face sets smaller at a given
+       size. The floor is legibility. */
+    font-size: clamp(10px, 7.2cqi, 14px);
   }
 
+  /* The kicker goes entirely. Dropping it is what leaves the name and the price
+     room to share their line inside the plate rather than being pushed out from
+     under the card — the row itself is now the layout at every width, so there
+     is nothing else here left to say. */
   .pcard__collection {
     display: none;
   }
-
-  .pcard__id {
-    flex-direction: row;
-    align-items: baseline;
-    gap: 0.6em;
-  }
-
-  /* Belt and braces: if a longer name is ever added to the catalogue it is
-     trimmed rather than allowed to shove the price off the card. */
-  .pcard__name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
 }
 
 /* ── the ground ────────────────────────────────────────────────────────── */

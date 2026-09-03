@@ -167,24 +167,22 @@ export function Products() {
               </div>
 
               <div className="pcard__meta">
+                {/* The collection, over the two things that actually identify
+                    this card. It is the same four words under all six of them,
+                    in a section that has already said them once — so it is set
+                    as a kicker, small and tracked and dimmed, rather than at the
+                    same size and weight as the name it was running into. It was
+                    a span INSIDE the name, which is why the two read as one
+                    line of equal type and the card had no hierarchy at all.
+                    A phone drops it outright — see the container query. */}
+                <span className="pcard__collection">Anime Sports League</span>
+                {/* The name and the price share the dominant line: the two
+                    things a reader is looking for, at the two ends of it. Which
+                    is what the meta's `space-between` was always for — the
+                    price used to be nested in the column beside it, so nothing
+                    was ever spaced between anything. */}
                 <div className="pcard__id">
-                  {/* The full catalogue name: the collection, then the tee.
-                      Two lines on a full-size card, which is what `pcard__id`
-                      being a column and `pcard__name` wrapping are already for. */}
-                  {/* The collection is its own span so a phone card can drop
-                      it — see the container query in the stylesheet. It is the
-                      same four words under all six cards, in a section that has
-                      already said them, and losing it is what lets the name and
-                      the price share one line inside the plate instead of being
-                      pushed out from under the card.
-                      The non-breaking space keeps the dash with the collection
-                      wherever the full name does wrap. */}
-                  <span className="pcard__name">
-                    <span className="pcard__collection">
-                      {'Anime Sports League - '}
-                    </span>
-                    {p.name} Black
-                  </span>
+                  <span className="pcard__name">{p.name} Black</span>
                   <span className="pcard__price">₹ {p.price}</span>
                 </div>
               </div>
