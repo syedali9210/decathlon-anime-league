@@ -58,14 +58,15 @@ const TRACKER =
 const tracked = (url: string) => `${url}${url.includes('?') ? '&' : '?'}${TRACKER}`
 
 /**
- * The campaign's own aisle, and where every shop errand that is not one product
- * goes: the standing pill, the hero badge's CTA, the deck's EXPLORE links.
+ * The campaign's own aisle, and where a shop errand that is not one particular
+ * product goes: the standing pill, and the hero badge's CTA.
  *
- * `instock=1` is the store's filter and belongs to the link — a reader sent to
- * the collection from a poster should not land on a sold-out grid.
+ * The bare collection, with no `instock` filter on it — the whole range as the
+ * store lists it, sold out or not. The tracker below is the only thing this
+ * link carries that the store did not give it.
  */
 export const COLLECTION = tracked(
-  'https://www.decathlon.in/c/anime-collection-99478?instock=1',
+  'https://www.decathlon.in/c/anime-collection-99478',
 )
 
 /**
