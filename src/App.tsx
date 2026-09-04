@@ -12,6 +12,7 @@ import { useSmoothScroll } from './lib/useParallax'
 import { useIdleOffscreen } from './lib/useIdleOffscreen'
 import { useReveal } from './lib/useReveal'
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 export default function App() {
   useSmoothScroll()
@@ -36,8 +37,12 @@ export default function App() {
       <ScrollCue />
       <ShopButton />
       <Cursor />
-      {/* Renders nothing; only reports page views once deployed. */}
+      {/* Neither renders anything. Page views, and then the Web Vitals behind
+          them — which on a page whose whole point is motion is the half worth
+          watching: LCP on the hero's traced artwork, and CLS and INP through
+          the pinned sections. */}
       <Analytics />
+      <SpeedInsights />
     </>
   )
 }
